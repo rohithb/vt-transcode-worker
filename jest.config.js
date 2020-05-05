@@ -4,8 +4,7 @@ module.exports = {
   },
   moduleFileExtensions: ["ts", "js", "json", "node"],
   testEnvironment: "node",
-  coveragePathIgnorePatterns: ["/node_modules/"],
+  coveragePathIgnorePatterns: ["/node_modules/", "/tests/"],
   runner: "groups",
   setupFiles: ["./tests/jestSetup.ts"],
-  coverageProvider: "v8",
 };

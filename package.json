@@ -4,15 +4,19 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "amqplib": "^0.5.5",
     "axios": "^0.19.2",
+    "backblaze-b2": "^1.5.0",
+    "dotenv": "^8.2.0",
     "fluent-ffmpeg": "^2.1.2",
     "uuid": "^7.0.2",
     "winston": "^3.2.1"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.5.13",
     "@types/fluent-ffmpeg": "^2.1.14",
     "@types/jest": "^25.1.4",
-    "@types/node": "^13.9.5",
+    "@types/node": "^13.13.4",
     "@types/sinon": "^9.0.0",
     "@types/uuid": "^7.0.2",
     "eslint": "^6.8.0",
@@ -27,6 +31,7 @@
   },
   "scripts": {
     "dev": "NODE_ENV=development TS_NODE_FILES=true node --inspect=5858 -r ts-node/register ./src/index.ts",
+    "dev:run": "NODE_ENV=development TS_NODE_FILES=true node -r ts-node/register",
     "dev:watch": "nodemon",
     "start": "NODE_ENV=production node dist/src/index.js",
     "build": "tsc -p .",

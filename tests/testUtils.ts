@@ -1,5 +1,6 @@
 import { readFileSync } from "fs";
 import path from "path";
+import fs from "fs";
 
 /**
  * Read string from a given file. Provides a cleaner way to access test assets
@@ -19,4 +20,20 @@ export function readAsset(filePath: string): string {
 export function getAssetPath(filePath: string): string {
   const currentFilePath = path.dirname(__filename);
   return path.resolve(currentFilePath + "/__assets__/" + filePath);
+}
+
+export function removeOutputFiles(outputPath: string): void {
+  if (fs.existsSync(outputPath)) {
+    fs.readdirSync(outputPath).forEach(function (file, index) {
+      var curPath = outputPath + "/" + file;
+      if (fs.lstatSync(curPath).isDirectory()) {
+        // recurse
+        removeOutputFiles(curPath);
+      } else {
+        // delete file
+        fs.unlinkSync(curPath);
+      }
+    });
+    fs.rmdirSync(outputPath);
+  }
 }
