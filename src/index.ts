@@ -23,7 +23,7 @@ amqp
             if (msg) {
               console.log(" [x] Received '%s'", msg.content.toString());
               const request = JSON.parse(msg.content.toString());
-              const inputAssetPath = await FileHandler.downloadFileFromB2(request.url, request.id);
+              const inputAssetPath = await FileHandler.downloadFileFromB2(request);
               // const inputAssetPath = "/Users/rohithb/Downloads/assets_test/abcd123.mp4";
               console.log(" [x] downloaded asset from b2 to '%s': ", inputAssetPath);
               const transcoder = new Transcoder();

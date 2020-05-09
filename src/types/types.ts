@@ -16,6 +16,7 @@ export interface TranscodeMediaRequest {
 }
 
 export interface B2Response {
+  requestId: string;
   contentLength: number;
   contentSha1: string;
   contentType: string;

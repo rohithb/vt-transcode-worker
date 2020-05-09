@@ -69,23 +69,27 @@ export default class FileHandler {
     fs.chmodSync(path, 0o766);
   }
 
-  public static async downloadFileFromB2(url: string, requestId: string): Promise<string> {
-    // const b2 = new BackBlaze({
-    //   applicationKeyId: process.env.B2_KEY_ID,
-    //   applicationKey: process.env.B2_APP_KEY,
-    // });
-    // await b2.authorize();
+  /**
+   * Download a file from backlaze B2
+   * @param request
+   */
+  public static async downloadFileFromB2(request: B2Response): Promise<string> {
+    const b2 = await this.getB2Instance();
+    const ext = path.extname(request.fileName);
+    const filePath = `${process.env.ASSETS_PATH}/${request.requestId}${ext}`;
+    const writer = fs.createWriteStream(filePath);
 
+    const response = await b2.downloadFileById({
+      fileId: request.fileId,
+      responseType: "stream",
+    });
+    response.data.pipe(writer);
+    // TODO: Do some sanity checks like verifying file size and sha1 etc
     return new Promise((resolve, reject) => {
-      const ext = path.extname(url);
-      const filePath = `${process.env.ASSETS_PATH}/${requestId}${ext}`;
-      const file = fs.createWriteStream(filePath);
-      const request = http.get(url, function (response) {
-        // TODO: verify mime type and make sure this is a video file
-        response.pipe(file).on("finish", () => {
-          resolve(filePath);
-        });
+      writer.on("finish", () => {
+        resolve(filePath);
       });
+      writer.on("error", reject);
     });
   }
 
@@ -104,12 +108,7 @@ export default class FileHandler {
   }
 
   private static async uploadFileToB2(filePath: string, mimeType: string): Promise<B2Response> {
-    // TODO: move all envronment variable access to outside this function
-    const b2 = new BackBlaze({
-      applicationKeyId: process.env.B2_KEY_ID,
-      applicationKey: process.env.B2_APP_KEY,
-    });
-    await b2.authorize();
+    const b2 = await this.getB2Instance();
     const uploadUrlResponse = await b2.getUploadUrl({
       bucketId: process.env.B2_BUCKET_ID,
     });
@@ -132,6 +131,16 @@ export default class FileHandler {
       fileName: uploadResponse.data.fileName,
       uploadTimestamp: uploadResponse.data.uploadTimestamp,
     };
+  }
+
+  private static async getB2Instance(): Promise<any> {
+    // TODO: move all envronment variable access to outside this function
+    const b2 = new BackBlaze({
+      applicationKeyId: process.env.B2_KEY_ID,
+      applicationKey: process.env.B2_APP_KEY,
+    });
+    await b2.authorize();
+    return b2;
   }
 
   public static deleteFiles(files: string[]) {
