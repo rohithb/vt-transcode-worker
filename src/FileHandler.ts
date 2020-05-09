@@ -2,9 +2,7 @@ import { dirname } from "path";
 import { TranscodeMediaRequest, TranscodedMedia, B2Response, UploadTranscodedMediaResponse } from "./types/types";
 import BackBlaze from "backblaze-b2";
 import fs from "fs";
-import http from "https";
 import path from "path";
-import { captureRejectionSymbol } from "events";
 
 export default class FileHandler {
   private static OUTPUT_MANIFEST_NAME = "palylist.m3u8";
@@ -107,6 +105,11 @@ export default class FileHandler {
     };
   }
 
+  /**
+   * Uplaod a single file to B2
+   * @param filePath
+   * @param mimeType
+   */
   private static async uploadFileToB2(filePath: string, mimeType: string): Promise<B2Response> {
     const b2 = await this.getB2Instance();
     const uploadUrlResponse = await b2.getUploadUrl({
@@ -133,6 +136,9 @@ export default class FileHandler {
     };
   }
 
+  /**
+   * Get authorized B2 instance
+   */
   private static async getB2Instance(): Promise<any> {
     // TODO: move all envronment variable access to outside this function
     const b2 = new BackBlaze({
@@ -143,6 +149,10 @@ export default class FileHandler {
     return b2;
   }
 
+  /**
+   * Delets all files specified in the input array
+   * @param files
+   */
   public static deleteFiles(files: string[]) {
     // TODO: add exception handling
     files.forEach((file) => {
