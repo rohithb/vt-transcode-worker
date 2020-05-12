@@ -7,16 +7,18 @@
     "importHelpers": true,
     "moduleResolution": "node",
     "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./src",
-    "types": ["jest"],
+    "types": ["reflect-metadata", "jest"],
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    "typeRoots": ["./src/types", "./node_modules/@types"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "tests/**/*.ts"]

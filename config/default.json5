@@ -1,0 +1,20 @@
+{
+  // DO NOT add testing values to this file.
+  // Instead create local.json5 with same content for local development configuration
+  paths: {
+    assetPath: '',
+    outputFolder: '',
+  },
+  remoteStorage: {
+    backblaze: {
+      keyId: '',
+      appKey: '',
+      bucketId: '',
+    },
+  },
+  amqp: {
+    host: '',
+    username: '',
+    password: '',
+  },
+}

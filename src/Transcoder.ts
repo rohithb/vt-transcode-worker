@@ -1,5 +1,5 @@
 import ffmpeg, { FfmpegCommand } from "fluent-ffmpeg";
-import { TranscodedMedia, TranscoderRequest, TranscodeMediaRequest } from "types/types";
+import { TranscodedMedia, TranscoderRequest, TranscodeMediaRequest } from "./interfaces";
 import FileHandler from "./FileHandler";
 
 export default class Transcoder {
@@ -40,11 +40,11 @@ export default class Transcoder {
    */
   public async transcodeMedia(request: TranscodeMediaRequest): Promise<TranscodedMedia> {
     const transcoderRequest = <TranscoderRequest>{
-      id: request.id,
+      requestId: request.requestId,
       inputAssetPath: request.inputAssetPath,
     };
     transcoderRequest.output = <TranscodedMedia>{
-      id: request.id,
+      requestId: request.requestId,
       manifest: FileHandler.getOutputManifestPath(request),
       mediaSegment: FileHandler.getOutputSegmentPath(request),
     };
