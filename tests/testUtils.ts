@@ -1,6 +1,9 @@
 import { readFileSync } from "fs";
 import path from "path";
 import fs from "fs";
+import Logger from "../src/helpers/Logger";
+import LoggerMock from "./__mocks__/Logger";
+import { container } from "tsyringe";
 
 /**
  * Read string from a given file. Provides a cleaner way to access test assets
@@ -36,4 +39,11 @@ export function removeOutputFiles(outputPath: string): void {
     });
     fs.rmdirSync(outputPath);
   }
+}
+
+/**
+ * Mocks the logger
+ */
+export function mockLogger() {
+  container.registerSingleton(Logger, LoggerMock);
 }

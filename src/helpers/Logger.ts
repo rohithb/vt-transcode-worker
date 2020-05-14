@@ -1,13 +1,23 @@
 import { singleton, injectable } from "tsyringe";
-import { createLogger, format, transports, Logger as IWinstonLogger } from "winston";
+import winston, { createLogger, format, transports, Logger as IWinstonLogger } from "winston";
 
 @singleton()
 @injectable()
 export default class Logger {
   public _logger: IWinstonLogger;
+  public log!: winston.LogMethod;
+  public error!: winston.LeveledLogMethod;
+  public warn!: winston.LeveledLogMethod;
+  public info!: winston.LeveledLogMethod;
+  public debug!: winston.LeveledLogMethod;
 
   constructor() {
-    this._logger = createLogger({
+    this._logger = this.createLogger();
+    this.initMethods();
+  }
+
+  private createLogger(): winston.Logger {
+    return createLogger({
       level: "info",
       format: format.combine(
         format.timestamp({
@@ -43,19 +53,11 @@ export default class Logger {
     }
   }
 
-  get log() {
-    return this._logger.log.bind(this._logger);
-  }
-  get error() {
-    return this._logger.error.bind(this._logger);
-  }
-  get warn() {
-    return this._logger.warn.bind(this._logger);
-  }
-  get info() {
-    return this._logger.info.bind(this._logger);
-  }
-  get debug() {
-    return this._logger.debug.bind(this._logger);
+  private initMethods() {
+    this.log = this._logger.log.bind(this._logger);
+    this.error = this._logger.error.bind(this._logger);
+    this.warn = this._logger.warn.bind(this._logger);
+    this.info = this._logger.info.bind(this._logger);
+    this.debug = this._logger.debug.bind(this._logger);
   }
 }

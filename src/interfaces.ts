@@ -31,5 +31,5 @@ export interface UploadTranscodedMediaResponse {
 
 export interface ObjectStoreManager {
   download(request: RemoteFile): Promise<string>;
-  uploadTranscodedMedia(request: TranscodeMediaRequest): Promise<UploadTranscodedMediaResponse>;
+  uploadTranscodedMedia(request: TranscodedMedia): Promise<UploadTranscodedMediaResponse>;
 }
