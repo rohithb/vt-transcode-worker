@@ -58,17 +58,19 @@ export default class B2FileManager implements ObjectStoreManager {
     });
   }
 
-  // uploadTranscodedMedia(request: TranscodedMedia): Promise<UploadTranscodedMediaResponse> {
-  //   const uploadManifestPromise = this.uploadFileToB2(request.manifest, "application/x-mpegURL");
-  //   const uploadMediaSegmentPromise = this.uploadFileToB2(request.mediaSegment, "video/MP2T");
-  //   try {
-  //     return <UploadTranscodedMediaResponse>{
-  //       requestId: request.requestId,
-  //       remoteManifest: await uploadManifestPromise,
-  //       remoteMediaSegment: await uploadMediaSegmentPromise,
-  //     };
-  //   } catch (err) {}
-  // }
+  /**
+   * Upload both manifest and media segment to b2
+   * @param transcodedMedia
+   */
+  async uploadTranscodedMedia(request: TranscodedMedia): Promise<UploadTranscodedMediaResponse> {
+    const uploadManifestPromise = this.uploadFileToB2(request.manifest, "application/x-mpegURL");
+    const uploadMediaSegmentPromise = this.uploadFileToB2(request.mediaSegment, "video/MP2T");
+    return <UploadTranscodedMediaResponse>{
+      requestId: request.requestId,
+      remoteManifest: await uploadManifestPromise,
+      remoteMediaSegment: await uploadMediaSegmentPromise,
+    };
+  }
 
   /**
    * Returns the download file location. => INPUT_DIR/requestID.ext
@@ -80,6 +82,11 @@ export default class B2FileManager implements ObjectStoreManager {
     return `${this.config.get(INPUT_DIRECTORY)}/${requestId}${ext}`;
   }
 
+  /**
+   * Uplaod a single file to B2
+   * @param filePath
+   * @param mimeType
+   */
   private async uploadFileToB2(filePath: string, mimeType: string): Promise<RemoteFile> {
     const b2 = await this.b2.authorize();
     const uploadUrlResponse = await this.b2.getUploadUrl({
