@@ -7,11 +7,11 @@ import Config from "@/helpers/Config";
 import { mockLogger, getMockConfig, getAssetPath, removeOutputFiles } from "../../testUtils";
 import BackBlazeB2Mock from "@tests/__mocks__/BackBlazeB2";
 import { RemoteFile, TranscodedMedia } from "@/interfaces";
-import FileUtils from "@/utils/FileUtils";
+import FileUtils from "@/utils/File";
 import fs from "fs";
 
 /**
- * @group unit/B2FileManager
+ * @group unit/helper/B2FileManager
  */
 describe("B2 File Manager", () => {
   const assetPath = getAssetPath("");
@@ -21,8 +21,8 @@ describe("B2 File Manager", () => {
   beforeAll(() => {
     mockLogger();
     const configMock = getMockConfig({
+      paths: { assetsBasePath: assetPath, outputDirectory: outputDir },
       remoteStorage: {
-        paths: { assetsBasePath: assetPath, outputDirectory: outputDir },
         backblaze: {
           keyId: "abcd",
           appKey: "abcd",

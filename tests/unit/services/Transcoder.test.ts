@@ -1,14 +1,14 @@
 import "reflect-metadata";
 import { container } from "tsyringe";
-import Transcoder from "@/Transcoder";
-import { getAssetPath, removeOutputFiles, mockLogger, getMockConfig } from "../testUtils";
+import Transcoder from "@/services/Transcoder";
+import { getAssetPath, removeOutputFiles, mockLogger, getMockConfig } from "@tests/testUtils";
 import fs from "fs";
 import { TranscodeMediaRequest } from "@/interfaces";
-import FileUtils from "@/utils/FileUtils";
+import FileUtils from "@/utils/File";
 import Config from "@/helpers/Config";
 
 /**
- * @group unit/transcoder
+ * @group unit/service/transcoder
  */
 describe("Transcoder", () => {
   const assetPath = getAssetPath("");
@@ -30,6 +30,10 @@ describe("Transcoder", () => {
     removeOutputFiles(tempFileOutputPath);
     const fileUtils = container.resolve<FileUtils>(FileUtils);
     fileUtils.ensureInputAndOutputPathExists(getAssetPath(""), "output");
+  });
+
+  afterAll(() => {
+    removeOutputFiles(tempFileOutputPath);
   });
 
   it("should works properly", async () => {

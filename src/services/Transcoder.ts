@@ -1,7 +1,7 @@
 import ffmpeg, { FfmpegCommand } from "fluent-ffmpeg";
-import { TranscodedMedia, TranscoderRequest, TranscodeMediaRequest } from "./interfaces";
+import { TranscodedMedia, TranscoderRequest, TranscodeMediaRequest } from "../interfaces";
 import { injectable, container } from "tsyringe";
-import FileUtils from "./utils/FileUtils";
+import FileUtils from "../utils/File";
 
 @injectable()
 export default class Transcoder {

@@ -1,8 +1,9 @@
 import { container, instanceCachingFactory } from "tsyringe";
 import BackBlazeB2 from "backblaze-b2";
-import config from "config";
-import { B2_APP_KEY, B2_KEY_ID } from "constants/config";
-import Logger from "./helpers/Logger";
+import Config from "@/helpers/Config";
+import { B2_APP_KEY, B2_KEY_ID } from "@/constants/config";
+
+const config = container.resolve<Config>(Config);
 // Registering Backblaze B2 client
 container.register<BackBlazeB2>(BackBlazeB2, {
   useValue: new BackBlazeB2({
@@ -10,5 +11,3 @@ container.register<BackBlazeB2>(BackBlazeB2, {
     applicationKeyId: config.get(B2_APP_KEY),
   }),
 });
-
-// container.registerSingleton<Logger>()

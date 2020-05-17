@@ -16,4 +16,11 @@ module.exports = {
     "@tests/(.*)": "<rootDir>/tests/$1",
     "@/(.*)": "<rootDir>/src/$1",
   },
+  collectCoverageFrom: [
+    "src/**/*.ts",
+    "!src/helpers/Logger.ts",
+    "!src/helpers/Config.ts",
+    "!src/register.ts",
+    "!src/index.ts",
+  ],
 };

@@ -29,6 +29,7 @@ export default class FileManagementUtils {
     if (!inputPath) {
       const err: any = new Error(`${ASSETS_BASE_PATH} is not present in the config`);
       this.logger.error(err, { code: ec.config_invalid_asset_base_path, inputPath, outputDir });
+      throw err;
     }
     const outputPath = `${inputPath}/${outputDir}`;
     this.createDirWithReadWritePerm(inputPath);
@@ -51,12 +52,19 @@ export default class FileManagementUtils {
   /**
    * Delets all files specified in the input array
    * @param files
+   * @returns boolean true if all the files are deleted. else returns false
    */
-  public deleteFiles(files: string[]) {
-    // TODO: add exception handling
+  public deleteFiles(files: string[]): boolean {
+    let isErrorOccured = true;
     files.forEach((file) => {
-      fs.unlinkSync(file);
+      try {
+        fs.unlinkSync(file);
+      } catch (err) {
+        this.logger.error(err, { code: ec.file_utils_failed_to_delete_file, file });
+        isErrorOccured = false;
+      }
     });
+    return isErrorOccured;
   }
 
   /**
