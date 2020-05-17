@@ -15,4 +15,8 @@ export default class Config {
     }
     return value;
   }
+
+  public set(key: string, value: any) {
+    this.store[key] = value;
+  }
 }

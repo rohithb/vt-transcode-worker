@@ -2,8 +2,8 @@
   // DO NOT add testing values to this file.
   // Instead create local.json5 with same content for local development configuration
   paths: {
-    assetPath: '',
-    outputFolder: '',
+    assetsBasePath: '',
+    outputDirectory: '',
   },
   remoteStorage: {
     backblaze: {

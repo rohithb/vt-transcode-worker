@@ -1,12 +1,14 @@
 import ffmpeg, { FfmpegCommand } from "fluent-ffmpeg";
 import { TranscodedMedia, TranscoderRequest, TranscodeMediaRequest } from "./interfaces";
-import FileHandler from "./FileHandler";
+import { injectable, container } from "tsyringe";
+import FileUtils from "./utils/FileUtils";
 
+@injectable()
 export default class Transcoder {
-  private command: FfmpegCommand;
+  private fileUtils: FileUtils;
 
-  constructor() {
-    this.command = ffmpeg();
+  constructor(fileUtils: FileUtils) {
+    this.fileUtils = fileUtils;
   }
 
   /**
@@ -15,7 +17,7 @@ export default class Transcoder {
    */
   private async transcode(request: TranscoderRequest): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.command
+      const command = ffmpeg()
         .input(request.inputAssetPath)
         .addOption("-hls_time", "10")
         .addOption("-hls_list_size", "0")
@@ -45,8 +47,8 @@ export default class Transcoder {
     };
     transcoderRequest.output = <TranscodedMedia>{
       requestId: request.requestId,
-      manifest: FileHandler.getOutputManifestPath(request),
-      mediaSegment: FileHandler.getOutputSegmentPath(request),
+      manifest: this.fileUtils.getOutputManifestPath(request),
+      mediaSegment: this.fileUtils.getOutputSegmentPath(request),
     };
     await this.transcode(transcoderRequest);
     return transcoderRequest.output;

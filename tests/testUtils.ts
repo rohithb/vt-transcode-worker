@@ -2,7 +2,8 @@ import { readFileSync } from "fs";
 import path from "path";
 import fs from "fs";
 import Logger from "../src/helpers/Logger";
-import LoggerMock from "./__mocks__/Logger";
+import LoggerMock from "./__mocks__/helpers/Logger";
+import ConfigMock from "./__mocks__/helpers/Config";
 import { container } from "tsyringe";
 
 /**
@@ -46,4 +47,11 @@ export function removeOutputFiles(outputPath: string): void {
  */
 export function mockLogger() {
   container.registerSingleton(Logger, LoggerMock);
+}
+/**
+ * returns a mock config object
+ * @param dict key value pair
+ */
+export function getMockConfig(dict: Record<string, any>) {
+  return new ConfigMock(dict);
 }

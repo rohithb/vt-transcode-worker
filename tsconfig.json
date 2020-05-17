@@ -13,12 +13,13 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "types": ["reflect-metadata", "jest"],
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"],
+      "@tests/*": ["./tests/*"]
     }
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "tests/**/*.ts"]
+  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules"]
 }

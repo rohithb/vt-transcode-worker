@@ -12,4 +12,8 @@ module.exports = {
   coveragePathIgnorePatterns: ["/node_modules/", "/tests/"],
   runner: "groups",
   setupFiles: ["./tests/jestSetup.ts"],
+  moduleNameMapper: {
+    "@tests/(.*)": "<rootDir>/tests/$1",
+    "@/(.*)": "<rootDir>/src/$1",
+  },
 };

@@ -1,46 +1,53 @@
-import Transcoder from "../../src/Transcoder";
-import sinon from "sinon";
-import { getAssetPath, removeOutputFiles } from "../testUtils";
-import { TranscodeMediaRequest } from "../../src/types/types";
-import FileHanlder from "../../src/FileHandler";
+import "reflect-metadata";
+import { container } from "tsyringe";
+import Transcoder from "@/Transcoder";
+import { getAssetPath, removeOutputFiles, mockLogger, getMockConfig } from "../testUtils";
 import fs from "fs";
+import { TranscodeMediaRequest } from "@/interfaces";
+import FileUtils from "@/utils/FileUtils";
+import Config from "@/helpers/Config";
 
 /**
  * @group unit/transcoder
  */
 describe("Transcoder", () => {
+  const assetPath = getAssetPath("");
+  const outputDir = "output";
+  const tempFileOutputPath = `${assetPath}/${outputDir}`;
+
   beforeAll(() => {
-    process.env.ASSETS_PATH = getAssetPath("");
-    process.env.OUTPUT_FOLDER = "output";
-    removeOutputFiles(`${process.env.ASSETS_PATH}/${process.env.OUTPUT_FOLDER}`);
-    FileHanlder.ensureInputAndOutputPathExists();
+    const configMock = getMockConfig({
+      remoteStorage: {
+        paths: { assetsBasePath: assetPath, outputDirectory: outputDir },
+      },
+    });
+    mockLogger();
+    //@ts-ignore
+    container.registerInstance(Config, configMock);
   });
 
-  afterEach(() => {
-    sinon.restore();
-  });
-  afterAll(() => {
-    removeOutputFiles(`${process.env.ASSETS_PATH}/${process.env.OUTPUT_FOLDER}`);
-    process.env.ASSETS_PATH = "";
-    process.env.OUTPUT_FOLDER = "";
+  beforeEach(() => {
+    removeOutputFiles(tempFileOutputPath);
+    const fileUtils = container.resolve<FileUtils>(FileUtils);
+    fileUtils.ensureInputAndOutputPathExists(getAssetPath(""), "output");
   });
 
   it("should works properly", async () => {
-    const transcoder = new Transcoder();
+    const transcoder = container.resolve<Transcoder>(Transcoder);
     const request: TranscodeMediaRequest = {
-      id: "151a8ac8-1654-4fe8-a435-72039fe70acd",
+      requestId: "151a8ac8-1654-4fe8-a435-72039fe70acd",
       inputAssetPath: getAssetPath("sample1.mp4"),
     };
     const output = await transcoder.transcodeMedia(request);
     expect(fs.existsSync(output.manifest)).toBe(true);
     expect(fs.existsSync(output.mediaSegment)).toBe(true);
-    expect(output.id).toBe(request.id);
+    expect(output.requestId).toBe(request.requestId);
   }, 20000);
 
   it("should throw error on invalid path", async () => {
-    const transcoder = new Transcoder();
+    const transcoder = container.resolve<Transcoder>(Transcoder);
     const request: TranscodeMediaRequest = {
-      id: "151a8ac8-1654-4fe8-a435-72039fe70acd",
+      requestId: "151a8ac8-1654-4fe8-a435-72039fe70acd",
       inputAssetPath: getAssetPath("sample12.mp4"),
     };
     const output = transcoder.transcodeMedia(request);

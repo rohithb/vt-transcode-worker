@@ -13,7 +13,7 @@ export default class BackBlazeB2 {
     return {
       data: {
         uploadUrl: "https://abcd.backblaze.com/file/somefile",
-        authorizationToken: "I allow you to upload ;-)",
+        authorizationToken: "I grant you permission to upload ;-)",
       },
     };
   });
@@ -26,7 +26,7 @@ export default class BackBlazeB2 {
         contentType: "video/mp4",
         fileId: "abcd_1234_file_12314",
         fileName: "not_so_awesome_file.mp4",
-        uploadTimestamp: 1589477127,
+        uploadTimestamp: (Date.now() / 1000) | 0,
       },
     };
   });

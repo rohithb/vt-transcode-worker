@@ -10,9 +10,9 @@ import path from "path";
 import fs from "fs";
 import BackBlazeB2 from "backblaze-b2";
 import Logger from "./Logger";
-import { ic } from "constants/logging";
+import { ic, ec } from "@/constants/logging";
 import Config from "./Config";
-import { INPUT_DIRECTORY, B2_BUCKET_ID } from "constants/config";
+import { B2_BUCKET_ID } from "@/constants/config";
 
 @singleton()
 @injectable()
@@ -32,41 +32,52 @@ export default class B2FileManager implements ObjectStoreManager {
    */
   private async authorize() {
     // TODO: avoid authorizing everytime, instead authorize only if current auth is expired or not authorized already.
-    await this.b2.authorize();
-    this.logger.info(ic.b2_authorized, { code: ic.b2_authorized });
+    try {
+      await this.b2.authorize();
+      this.logger.info(ic.b2_authorized, { code: ic.b2_authorized });
+    } catch (err) {
+      this.logger.error(err, { code: ec.b2_authorization_failed });
+      throw err;
+    }
   }
 
   /**
    * Downlaod the requested file and returns the downloaded asset path
    * @param request
+   * @param downloadFileDirectory the directory to which the file need to be downloaded
    */
-  async download(request: RemoteFile): Promise<string> {
-    await this.authorize();
-    const filePath = this.getDownloadFilePath(request.fileName, request.requestId);
-    const writer = fs.createWriteStream(filePath);
-    const response = await this.b2.downloadFileById({
-      fileId: request.fileId,
-      responseType: "stream",
-    });
-    response.data.pipe(writer);
-    // TODO: Do some sanity checks like verifying file size and sha1 etc
-    return new Promise((resolve, reject) => {
-      writer.on("finish", () => {
-        resolve(filePath);
+  async download(remoteFile: RemoteFile, downloadFileDirectory: string): Promise<string> {
+    try {
+      await this.authorize();
+      const filePath = this.getDownloadFilePath(remoteFile.fileName, remoteFile.requestId, downloadFileDirectory);
+      const writer = fs.createWriteStream(filePath);
+      const response = await this.b2.downloadFileById({
+        fileId: remoteFile.fileId,
+        responseType: "stream",
       });
-      writer.on("error", reject);
-    });
+      response.data.pipe(writer);
+      // TODO: Do some sanity checks like verifying file size and sha1 etc
+      return new Promise((resolve, reject) => {
+        writer.on("finish", () => {
+          resolve(filePath);
+        });
+        writer.on("error", reject);
+      });
+    } catch (err) {
+      this.logger.error(err, { code: ec.b2_download_asset_failed, remoteFile });
+      throw err;
+    }
   }
 
   /**
    * Upload both manifest and media segment to b2
    * @param transcodedMedia
    */
-  async uploadTranscodedMedia(request: TranscodedMedia): Promise<UploadTranscodedMediaResponse> {
-    const uploadManifestPromise = this.uploadFileToB2(request.manifest, "application/x-mpegURL");
-    const uploadMediaSegmentPromise = this.uploadFileToB2(request.mediaSegment, "video/MP2T");
+  async uploadTranscodedMedia(trancodedMedia: TranscodedMedia): Promise<UploadTranscodedMediaResponse> {
+    const uploadManifestPromise = this.uploadFileToB2(trancodedMedia.manifest, "application/x-mpegURL");
+    const uploadMediaSegmentPromise = this.uploadFileToB2(trancodedMedia.mediaSegment, "video/MP2T");
     return <UploadTranscodedMediaResponse>{
-      requestId: request.requestId,
+      requestId: trancodedMedia.requestId,
       remoteManifest: await uploadManifestPromise,
       remoteMediaSegment: await uploadMediaSegmentPromise,
     };
@@ -76,10 +87,11 @@ export default class B2FileManager implements ObjectStoreManager {
    * Returns the download file location. => INPUT_DIR/requestID.ext
    * @param fileName
    * @param requestId
+   * @param downloadFileDirectory
    */
-  private getDownloadFilePath(fileName: string, requestId: string) {
+  private getDownloadFilePath(fileName: string, requestId: string, downloadFileDirectory: string) {
     const ext = path.extname(fileName);
-    return `${this.config.get(INPUT_DIRECTORY)}/${requestId}${ext}`;
+    return `${downloadFileDirectory}/${requestId}${ext}`;
   }
 
   /**
