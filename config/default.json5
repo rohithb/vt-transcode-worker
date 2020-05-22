@@ -9,12 +9,17 @@
     backblaze: {
       keyId: '',
       appKey: '',
-      bucketId: '',
+      inputBucketId: '',
+      outputBucketId: '',
     },
   },
   amqp: {
     host: '',
+    port: '',
     username: '',
     password: '',
+    queues: {
+      inputAssetQueue: '',
+    },
   },
 }

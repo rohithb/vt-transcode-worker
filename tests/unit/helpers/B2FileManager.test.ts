@@ -4,7 +4,7 @@ import sinon from "sinon";
 import BackBlazeB2 from "backblaze-b2";
 import B2FileManager from "@/helpers/B2FileManager";
 import Config from "@/helpers/Config";
-import { mockLogger, getMockConfig, getAssetPath, removeOutputFiles } from "../../testUtils";
+import { mockLogger, getMockConfig, getAssetPath, removeOutputFiles } from "@tests/testUtils";
 import BackBlazeB2Mock from "@tests/__mocks__/BackBlazeB2";
 import { RemoteFile, TranscodedMedia } from "@/interfaces";
 import FileUtils from "@/utils/File";

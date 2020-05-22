@@ -22,5 +22,6 @@ module.exports = {
     "!src/helpers/Config.ts",
     "!src/register.ts",
     "!src/index.ts",
+    "!src/types/*.ts",
   ],
 };

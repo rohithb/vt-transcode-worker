@@ -2,13 +2,17 @@ import ffmpeg, { FfmpegCommand } from "fluent-ffmpeg";
 import { TranscodedMedia, TranscoderRequest, TranscodeMediaRequest } from "../interfaces";
 import { injectable, container } from "tsyringe";
 import FileUtils from "../utils/File";
+import Logger from "./Logger";
+import { ic, ec } from "@/constants/logging";
 
 @injectable()
 export default class Transcoder {
   private fileUtils: FileUtils;
+  private logger: Logger;
 
-  constructor(fileUtils: FileUtils) {
+  constructor(fileUtils: FileUtils, logger: Logger) {
     this.fileUtils = fileUtils;
+    this.logger = logger;
   }
 
   /**
@@ -50,7 +54,21 @@ export default class Transcoder {
       manifest: this.fileUtils.getOutputManifestPath(request),
       mediaSegment: this.fileUtils.getOutputSegmentPath(request),
     };
-    await this.transcode(transcoderRequest);
-    return transcoderRequest.output;
+    try {
+      await this.transcode(transcoderRequest);
+      this.logger.info(ic.transcode_completed, {
+        code: ic.transcode_completed,
+        requestId: transcoderRequest.requestId,
+        transcodedMedia: transcoderRequest.output,
+      });
+      return transcoderRequest.output;
+    } catch (err) {
+      this.logger.error(err, {
+        code: ec.failed_to_trancode_input_asset,
+        requestId: transcoderRequest.requestId,
+        transcodeRequest: request,
+      });
+      throw err;
+    }
   }
 }

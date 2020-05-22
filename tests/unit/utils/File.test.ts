@@ -55,7 +55,7 @@ describe("File Utils", () => {
     const filepath = `${tempFileOutputPath}/test_file.txt`;
     fs.openSync(filepath, "w");
     expect(fs.existsSync(filepath)).toBeTruthy();
-    const res = fileUtils.deleteFiles([filepath]);
+    const res = fileUtils.deleteFiles([filepath], "abcd123");
     expect(res).toBeTruthy();
     expect(fs.existsSync(filepath)).toBeFalsy();
   });
@@ -64,7 +64,7 @@ describe("File Utils", () => {
     fileUtils.ensureInputAndOutputPathExists(assetPath, outputDir);
     const filepath = `${tempFileOutputPath}/test_file.txt`;
     expect(fs.existsSync(filepath)).toBeFalsy();
-    const res = fileUtils.deleteFiles([filepath]);
+    const res = fileUtils.deleteFiles([filepath], "abcd123");
     expect(res).toBeFalsy();
   });
 

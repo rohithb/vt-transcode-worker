@@ -12,7 +12,7 @@ import BackBlazeB2 from "backblaze-b2";
 import Logger from "./Logger";
 import { ic, ec } from "@/constants/logging";
 import Config from "./Config";
-import { B2_BUCKET_ID } from "@/constants/config";
+import { B2_OUTPUT_BUCKET_ID } from "@/constants/config";
 
 @singleton()
 @injectable()
@@ -59,6 +59,11 @@ export default class B2FileManager implements ObjectStoreManager {
       // TODO: Do some sanity checks like verifying file size and sha1 etc
       return new Promise((resolve, reject) => {
         writer.on("finish", () => {
+          this.logger.info(ic.downloaded_input_asset, {
+            code: ic.downloaded_input_asset,
+            inputAssetPath: filePath,
+            requestId: remoteFile.requestId,
+          });
           resolve(filePath);
         });
         writer.on("error", reject);
@@ -74,13 +79,28 @@ export default class B2FileManager implements ObjectStoreManager {
    * @param transcodedMedia
    */
   async uploadTranscodedMedia(trancodedMedia: TranscodedMedia): Promise<UploadTranscodedMediaResponse> {
-    const uploadManifestPromise = this.uploadFileToB2(trancodedMedia.manifest, "application/x-mpegURL");
-    const uploadMediaSegmentPromise = this.uploadFileToB2(trancodedMedia.mediaSegment, "video/MP2T");
-    return <UploadTranscodedMediaResponse>{
-      requestId: trancodedMedia.requestId,
-      remoteManifest: await uploadManifestPromise,
-      remoteMediaSegment: await uploadMediaSegmentPromise,
-    };
+    const requestId = trancodedMedia.requestId;
+    try {
+      const uploadManifestPromise = this.uploadFileToB2(trancodedMedia.manifest, "application/x-mpegURL", requestId);
+      const uploadMediaSegmentPromise = this.uploadFileToB2(trancodedMedia.mediaSegment, "video/MP2T", requestId);
+      this.logger.info(ic.uploaded_transcoded_assets, {
+        code: ic.uploaded_transcoded_assets,
+        requestId,
+      });
+      return <UploadTranscodedMediaResponse>{
+        requestId: trancodedMedia.requestId,
+        remoteManifest: await uploadManifestPromise,
+        remoteMediaSegment: await uploadMediaSegmentPromise,
+      };
+    } catch (err) {
+      const newErr: any = new Error("Failed to upload trancoded assets");
+      this.logger.error(newErr, {
+        code: ec.failed_to_upload_trancoded_assets,
+        requestId,
+        trancodedMedia,
+      });
+      throw newErr;
+    }
   }
 
   /**
@@ -99,29 +119,39 @@ export default class B2FileManager implements ObjectStoreManager {
    * @param filePath
    * @param mimeType
    */
-  private async uploadFileToB2(filePath: string, mimeType: string): Promise<RemoteFile> {
+  private async uploadFileToB2(filePath: string, mimeType: string, requestId: string): Promise<RemoteFile> {
     const b2 = await this.b2.authorize();
     const uploadUrlResponse = await this.b2.getUploadUrl({
-      bucketId: this.config.get(B2_BUCKET_ID, ""),
+      bucketId: this.config.get(B2_OUTPUT_BUCKET_ID, ""),
     });
 
     // TODO: convert to large file upload
     const buf = fs.readFileSync(filePath);
-    const uploadResponse = await this.b2.uploadFile({
-      uploadUrl: uploadUrlResponse.data.uploadUrl,
-      uploadAuthToken: uploadUrlResponse.data.authorizationToken,
-      fileName: path.basename(filePath),
-      mime: mimeType, // optional mime type, will default to 'b2/x-auto' if not provided
-      data: buf, // this is expecting a Buffer, not an encoded string
-      onUploadProgress: null,
-    });
-    return <RemoteFile>{
-      contentLength: uploadResponse.data.contentLength,
-      contentSha1: uploadResponse.data.contentSha1,
-      contentType: uploadResponse.data.contentType,
-      fileId: uploadResponse.data.fileId,
-      fileName: uploadResponse.data.fileName,
-      uploadTimestamp: uploadResponse.data.uploadTimestamp,
-    };
+    try {
+      const uploadResponse = await this.b2.uploadFile({
+        uploadUrl: uploadUrlResponse.data.uploadUrl,
+        uploadAuthToken: uploadUrlResponse.data.authorizationToken,
+        fileName: path.basename(filePath),
+        mime: mimeType, // optional mime type, will default to 'b2/x-auto' if not provided
+        data: buf, // this is expecting a Buffer, not an encoded string
+        onUploadProgress: null,
+      });
+      return <RemoteFile>{
+        contentLength: uploadResponse.data.contentLength,
+        contentSha1: uploadResponse.data.contentSha1,
+        contentType: uploadResponse.data.contentType,
+        fileId: uploadResponse.data.fileId,
+        fileName: uploadResponse.data.fileName,
+        uploadTimestamp: uploadResponse.data.uploadTimestamp,
+      };
+    } catch (err) {
+      this.logger.error(err, {
+        code: ec.failed_to_upload_file_to_object_store,
+        filePath,
+        mimeType,
+        requestId,
+      });
+      throw err;
+    }
   }
 }

@@ -1,3 +1,5 @@
+import { ConsumeMessage } from "amqplib";
+
 export interface RemoteFile {
   requestId: string;
   contentLength?: number;
@@ -33,3 +35,5 @@ export interface ObjectStoreManager {
   download(remoteFile: RemoteFile, downloadFileDirectory: string): Promise<string>;
   uploadTranscodedMedia(transcodedMedia: TranscodedMedia): Promise<UploadTranscodedMediaResponse>;
 }
+
+export type amqpHanderFn = (msg: ConsumeMessage) => void;

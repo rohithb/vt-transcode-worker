@@ -2,7 +2,7 @@ import { singleton, injectable } from "tsyringe";
 import Logger from "@/helpers/Logger";
 import fs from "fs";
 import { ASSETS_BASE_PATH, OUTPUT_DIRECTORY } from "@/constants/config";
-import { ec } from "@/constants/logging";
+import { ec, ic } from "@/constants/logging";
 import { TranscodeMediaRequest } from "@/interfaces";
 import { dirname } from "path";
 import Config from "@/helpers/Config";
@@ -54,17 +54,20 @@ export default class FileManagementUtils {
    * @param files
    * @returns boolean true if all the files are deleted. else returns false
    */
-  public deleteFiles(files: string[]): boolean {
-    let isErrorOccured = true;
+  public deleteFiles(files: string[], requestId: string): boolean {
+    let isErrorOccured = false;
     files.forEach((file) => {
       try {
         fs.unlinkSync(file);
       } catch (err) {
-        this.logger.error(err, { code: ec.file_utils_failed_to_delete_file, file });
-        isErrorOccured = false;
+        this.logger.error(err, { code: ec.file_utils_failed_to_delete_file, file, requestId });
+        isErrorOccured = true;
       }
     });
-    return isErrorOccured;
+    if (!isErrorOccured) {
+      this.logger.info(ic.deleted_working_files, { code: ic.deleted_working_files, requestId, files });
+    }
+    return !isErrorOccured;
   }
 
   /**

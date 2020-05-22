@@ -1,14 +1,6 @@
 import "reflect-metadata";
-// import FileHandler from "./FileHandler";
-import amqp from "amqplib";
-import Transcoder from "./services/Transcoder";
-import AmqpHandler from "./AmqpHandler";
-import { TranscodeMediaRequest } from "./interfaces";
 import { container } from "tsyringe";
 require("./register");
-import B2FileManager from "./helpers/B2FileManager";
-
-const instance = container.resolve(B2FileManager);
 
 // FileHandler.ensureInputAndOutputPathExists();
 

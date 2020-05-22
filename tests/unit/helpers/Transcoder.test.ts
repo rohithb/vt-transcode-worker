@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { container } from "tsyringe";
-import Transcoder from "@/services/Transcoder";
+import Transcoder from "@/helpers/Transcoder";
 import { getAssetPath, removeOutputFiles, mockLogger, getMockConfig } from "@tests/testUtils";
 import fs from "fs";
 import { TranscodeMediaRequest } from "@/interfaces";
