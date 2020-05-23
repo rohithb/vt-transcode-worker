@@ -9,9 +9,6 @@ import App from "@/App";
 import { RemoteFile } from "@/interfaces";
 import Transcode from "@/services/Transcode";
 
-/**
- * @group unit/helper/Amqp
- */
 describe("AMQP helper", () => {
   const assetPath = getAssetPath("");
   const outputDir = "output";
