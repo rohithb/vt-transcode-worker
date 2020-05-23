@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { container } from "tsyringe";
-import { mockLogger, getMockConfig } from "@tests/testUtils";
+import { mockLogger, getMockConfig, getMockAmqpConnectionAndChannel } from "@tests/testUtils";
 import Config from "@/helpers/Config";
 import Amqp from "@/helpers/Amqp";
 import mockAmqplib from "mock-amqplib";
@@ -35,13 +35,11 @@ describe("AMQP helper", () => {
     const queueName = "task_queue";
     const amqp = container.resolve<Amqp>(Amqp);
 
-    const mockAmqpConnection = await mockAmqplib.connect("something");
-    const channel = await mockAmqpConnection.createChannel();
-    await channel.assertQueue(queueName, { durable: true });
+    const { connection, channel } = await getMockAmqpConnectionAndChannel(queueName);
     await channel.sendToQueue(queueName, "test-content1");
 
     // sinon.stub(amqp, <any>"getConnection").returns(mockAmqpConnection);
-    sinon.stub(amqpOriginalLib, "connect").returns(mockAmqpConnection);
+    sinon.stub(amqpOriginalLib, "connect").returns(connection);
     const handlerFn = jest.fn();
 
     const { consumerTag } = await amqp.consumeMessage(queueName, handlerFn);

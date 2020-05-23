@@ -5,6 +5,8 @@ import Logger from "../src/helpers/Logger";
 import LoggerMock from "./__mocks__/helpers/Logger";
 import ConfigMock from "./__mocks__/helpers/Config";
 import { container } from "tsyringe";
+import mockAmqplib from "mock-amqplib";
+import amqpOriginalLib from "amqplib";
 
 /**
  * Read string from a given file. Provides a cleaner way to access test assets
@@ -54,4 +56,15 @@ export function mockLogger() {
  */
 export function getMockConfig(dict: Record<string, any>) {
   return new ConfigMock(dict);
+}
+
+/**
+ * returns a mock amqp connection and channel for a given queue name
+ * @param queueName
+ */
+export async function getMockAmqpConnectionAndChannel(queueName: string) {
+  const mockAmqpConnection = await mockAmqplib.connect("something");
+  const channel = await mockAmqpConnection.createChannel();
+  await channel.assertQueue(queueName, { durable: true });
+  return { connection: mockAmqpConnection, channel };
 }

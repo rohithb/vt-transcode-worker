@@ -1,11 +1,14 @@
 import { Readable } from "stream";
+import { getAssetPath } from "@tests/testUtils";
+import fs from "fs";
 
 export default class BackBlazeB2 {
   public authorize = jest.fn();
 
   public downloadFileById = jest.fn(() => {
     return {
-      data: Readable.from("Backblaze mock", { encoding: "utf8" }),
+      // data: Readable.from("Backblaze mock", { encoding: "utf8" }),
+      data: fs.createReadStream(getAssetPath("sample1.mp4")),
     };
   });
 

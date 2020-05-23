@@ -8,7 +8,7 @@ export default class Config {
     if (key === null || key === undefined) {
       throw new Error("Calling config.get with null or undefined argument");
     }
-    const value = this.store[key];
+    const value = this.recLookup(this.store, key);
     if (value === undefined) {
       if (defaultValue === undefined) throw new Error('Configuration property "' + key + '" is not defined');
       return defaultValue;
@@ -16,7 +16,23 @@ export default class Config {
     return value;
   }
 
-  public set(key: string, value: any) {
-    this.store[key] = value;
+  public set(path: string, value: any) {
+    var schema = this.store; // a moving reference to internal objects within obj
+    var pList = path.split(".");
+    var len = pList.length;
+    for (var i = 0; i < len - 1; i++) {
+      var elem = pList[i];
+      if (!schema[elem]) schema[elem] = {};
+      schema = schema[elem];
+    }
+    schema[pList[len - 1]] = value;
+  }
+
+  private recLookup(obj: any, path: string): any {
+    const parts = path.split(".");
+    if (parts.length == 1) {
+      return obj[parts[0]];
+    }
+    return this.recLookup(obj[parts[0]], parts.slice(1).join("."));
   }
 }

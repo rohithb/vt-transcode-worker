@@ -8,7 +8,7 @@ import FileUtils from "@/utils/File";
 import Config from "@/helpers/Config";
 
 /**
- * @group unit/service/transcoder
+ * @group unit/helper/transcoder
  */
 describe("Transcoder", () => {
   const assetPath = getAssetPath("");
@@ -17,9 +17,7 @@ describe("Transcoder", () => {
 
   beforeAll(() => {
     const configMock = getMockConfig({
-      remoteStorage: {
-        paths: { assetsBasePath: assetPath, outputDirectory: outputDir },
-      },
+      paths: { assetsBasePath: assetPath, outputDirectory: outputDir },
     });
     mockLogger();
     //@ts-ignore
@@ -29,7 +27,7 @@ describe("Transcoder", () => {
   beforeEach(() => {
     removeOutputFiles(tempFileOutputPath);
     const fileUtils = container.resolve<FileUtils>(FileUtils);
-    fileUtils.ensureInputAndOutputPathExists(getAssetPath(""), "output");
+    fileUtils.ensureInputAndOutputPathExists();
   });
 
   afterAll(() => {

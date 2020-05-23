@@ -6,6 +6,7 @@ import fs from "fs";
 import Config from "@/helpers/Config";
 import { TranscodeMediaRequest } from "@/interfaces";
 import { FILE_SEPARATOR, OUTPUT_MANIFEST_NAME, OUTPUT_SEGMENT_NAME } from "@/constants/others";
+import { ASSETS_BASE_PATH } from "@/constants/config";
 
 /**
  * @group unit/utils/File
@@ -18,9 +19,7 @@ describe("File Utils", () => {
 
   beforeAll(() => {
     const configMock = getMockConfig({
-      remoteStorage: {
-        paths: { assetsBasePath: assetPath, outputDirectory: outputDir },
-      },
+      paths: { assetsBasePath: assetPath, outputDirectory: outputDir },
     });
     mockLogger();
     //@ts-ignore
@@ -36,7 +35,7 @@ describe("File Utils", () => {
   });
 
   test("ensure input and output path exists sucess", () => {
-    fileUtils.ensureInputAndOutputPathExists(assetPath, outputDir);
+    fileUtils.ensureInputAndOutputPathExists();
     expect(fs.existsSync(assetPath)).toBeTruthy();
     expect(fs.existsSync(tempFileOutputPath)).toBeTruthy();
     // check the path have read and write permissions
@@ -45,13 +44,19 @@ describe("File Utils", () => {
   });
 
   test("ensure input and output path exists- throws error- without input path", () => {
+    const mockConfig = container.resolve<Config>(Config);
+    const currentVal = mockConfig.get(ASSETS_BASE_PATH);
+    //@ts-ignore
+    mockConfig.set(ASSETS_BASE_PATH, "");
     expect(() => {
-      fileUtils.ensureInputAndOutputPathExists("", outputDir);
+      fileUtils.ensureInputAndOutputPathExists();
     }).toThrowError();
+    //@ts-ignore
+    mockConfig.set(ASSETS_BASE_PATH, currentVal);
   });
 
   test("delete file success", () => {
-    fileUtils.ensureInputAndOutputPathExists(assetPath, outputDir);
+    fileUtils.ensureInputAndOutputPathExists();
     const filepath = `${tempFileOutputPath}/test_file.txt`;
     fs.openSync(filepath, "w");
     expect(fs.existsSync(filepath)).toBeTruthy();
@@ -61,7 +66,7 @@ describe("File Utils", () => {
   });
 
   test("delete file exception handling", () => {
-    fileUtils.ensureInputAndOutputPathExists(assetPath, outputDir);
+    fileUtils.ensureInputAndOutputPathExists();
     const filepath = `${tempFileOutputPath}/test_file.txt`;
     expect(fs.existsSync(filepath)).toBeFalsy();
     const res = fileUtils.deleteFiles([filepath], "abcd123");

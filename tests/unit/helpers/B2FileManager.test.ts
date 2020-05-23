@@ -38,7 +38,7 @@ describe("B2 File Manager", () => {
 
   beforeEach(() => {
     const fileUtils = container.resolve<FileUtils>(FileUtils);
-    fileUtils.ensureInputAndOutputPathExists(getAssetPath(""), "output");
+    fileUtils.ensureInputAndOutputPathExists();
   });
 
   afterEach(() => {
@@ -50,11 +50,11 @@ describe("B2 File Manager", () => {
     const requestId = "123456789";
     const remoteFile = <RemoteFile>{
       fileId: "uuid_2123_uuid_23",
-      fileName: "test.txt",
+      fileName: "test.mp4",
       requestId,
     };
     await b2FileManager.download(remoteFile, tempFileOutputPath);
-    const outputFile = `${tempFileOutputPath}/${requestId}.txt`;
+    const outputFile = `${tempFileOutputPath}/${requestId}.mp4`;
     const b2 = container.resolve<BackBlazeB2>(BackBlazeB2);
     expect(fs.existsSync(outputFile)).toBeTruthy();
     expect(b2.authorize).toBeCalled();
@@ -73,6 +73,21 @@ describe("B2 File Manager", () => {
     expect(reponse.requestId).toBe(requestId);
     const b2 = container.resolve<BackBlazeB2>(BackBlazeB2);
     expect(b2.uploadFile).toBeCalled();
+  });
+
+  test("upload file exception handling", async () => {
+    const requestId = "123456789";
+    const b2FileManager = container.resolve<B2FileManager>(B2FileManager);
+    const transcodedMedia = <TranscodedMedia>{
+      manifest: getAssetPath("sample_playlist.m3u8"),
+      mediaSegment: getAssetPath("sample1.mp4"),
+      requestId,
+    };
+    const b2 = container.resolve<BackBlazeB2>(BackBlazeB2);
+    sinon.stub(b2, "uploadFile").throws("Network error");
+    expect(async () => {
+      const reponse = await b2FileManager.uploadTranscodedMedia(transcodedMedia);
+    }).rejects.toThrow();
   });
 
   test("b2 authorization fails", async () => {

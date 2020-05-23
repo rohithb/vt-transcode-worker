@@ -21,11 +21,11 @@ export default class FileManagementUtils {
 
   /**
    * Create the input and output paths if doesn't exists and sets RW permissions
-   * To be called once when the worker starts.
-   * @param inputPath
-   * @param outputDir
+   * To be called once when the app starts.
    */
-  public ensureInputAndOutputPathExists(inputPath: string, outputDir: string): void {
+  public ensureInputAndOutputPathExists(): void {
+    const inputPath = this.config.get(ASSETS_BASE_PATH);
+    const outputDir = this.config.get(OUTPUT_DIRECTORY);
     if (!inputPath) {
       const err: any = new Error(`${ASSETS_BASE_PATH} is not present in the config`);
       this.logger.error(err, { code: ec.config_invalid_asset_base_path, inputPath, outputDir });
