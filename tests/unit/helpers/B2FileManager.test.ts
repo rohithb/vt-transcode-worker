@@ -86,7 +86,7 @@ describe("B2 File Manager", () => {
     const b2 = container.resolve<BackBlazeB2>(BackBlazeB2);
     sinon.stub(b2, "uploadFile").throws("Network error");
     expect(async () => {
-      const reponse = await b2FileManager.uploadTranscodedMedia(transcodedMedia);
+      const reponses = await b2FileManager.uploadTranscodedMedia(transcodedMedia);
     }).rejects.toThrow();
   });
 

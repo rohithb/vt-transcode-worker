@@ -11,7 +11,7 @@ import {
   getMockAmqpConnectionAndChannel,
 } from "@tests/testUtils";
 import BackBlazeB2Mock from "@tests/__mocks__/BackBlazeB2";
-import { RemoteFile, TranscodedMedia } from "@/interfaces";
+import { RemoteFile, TranscodedMedia, TranscodeWorkerInput } from "@/interfaces";
 import mockAmqplib from "mock-amqplib";
 import amqpOriginalLib from "amqplib";
 import FileUtils from "@/utils/File";
@@ -67,10 +67,15 @@ describe("Transcode service", () => {
     sinon.stub(amqpOriginalLib, "connect").returns(connection);
 
     const transcodeService = container.resolve<Transcode>(Transcode);
-    const response = await transcodeService.transcodeInputAssetAndUploadToObjectStore(<RemoteFile>{
+    const remoteFile = <RemoteFile>{
       requestId: "abcd_12345",
       fileId: "12342344abcd",
       fileName: "test_file.mp4",
+    };
+    const response = await transcodeService.transcodeInputAssetAndUploadToObjectStore(<TranscodeWorkerInput>{
+      requestId: "abcd_12345",
+      inputRemoteFile: remoteFile,
+      transcodeConfig: {},
     });
     expect(response).toBeDefined();
     expect(response.requestId).toBe("abcd_12345");

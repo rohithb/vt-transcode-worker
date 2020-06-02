@@ -6,7 +6,7 @@ import { ec, ic } from "@/constants/logging";
 import { TranscodeMediaRequest } from "@/interfaces";
 import { dirname } from "path";
 import Config from "@/helpers/Config";
-import { FILE_SEPARATOR, OUTPUT_MANIFEST_NAME, OUTPUT_SEGMENT_NAME } from "@/constants/others";
+// import { OUTPUT_MANIFEST_NAME, OUTPUT_SEGMENT_NAME } from "@/constants/others";
 
 @singleton()
 @injectable()
@@ -50,6 +50,23 @@ export default class FileManagementUtils {
   }
 
   /**
+   * Create a new file and write the given contents to it
+   * @param filePath
+   * @param content
+   */
+  public async createFile(filePath: string, content: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      fs.writeFile(filePath, content, (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+  }
+
+  /**
    * Delets all files specified in the input array
    * @param files
    * @returns boolean true if all the files are deleted. else returns false
@@ -71,33 +88,32 @@ export default class FileManagementUtils {
   }
 
   /**
+   * create the output folder and ensure the folder exists with write permissions
+   * @param transcodeMedia
+   */
+  public getOutputPath(transcodeMedia: TranscodeMediaRequest): string {
+    let outputPath = dirname(transcodeMedia.inputAssetPath);
+    const outputDirectoryName = this.config.get(OUTPUT_DIRECTORY, "output");
+    outputPath = `${outputPath}/${outputDirectoryName}/${transcodeMedia.requestId}`;
+    this.createDirWithReadWritePerm(outputPath);
+    return outputPath;
+  }
+
+  /**
    * returns the output manigest path
    * @param transcodeMedia
    */
-  public getOutputManifestPath(transcodeMedia: TranscodeMediaRequest): string {
-    let outputPath = dirname(transcodeMedia.inputAssetPath);
-    outputPath = this.removeFileNameSeparator(outputPath);
-    const outputDirectory = this.config.get(OUTPUT_DIRECTORY, "output");
-    return `${outputPath}/${outputDirectory}/${transcodeMedia.requestId}${FILE_SEPARATOR}${OUTPUT_MANIFEST_NAME}`;
-  }
+  // public getOutputManifestPathPrefix(transcodeMedia: TranscodeMediaRequest): string {
+  //   const outputPath = this.getOutputPath(transcodeMedia);
+  //   return `${outputPath}/${OUTPUT_MANIFEST_NAME}`;
+  // }
 
   /**
-   * returns the output media segment path
+   * returns the output media segment path path,
    * @param transcodeMedia
    */
-  public getOutputSegmentPath(transcodeMedia: TranscodeMediaRequest): string {
-    let outputPath = dirname(transcodeMedia.inputAssetPath);
-    outputPath = this.removeFileNameSeparator(outputPath);
-    const outputDirectory = this.config.get(OUTPUT_DIRECTORY, "output");
-    return `${outputPath}/${outputDirectory}/${transcodeMedia.requestId}${FILE_SEPARATOR}${OUTPUT_SEGMENT_NAME}`;
-  }
-
-  /**
-   * We are using 3 underscores (___) for separating filename and directory name while processing
-   * This function will replace ___ with _ to avoid duplicate seperator while uploading to b2
-   * @param fileName
-   */
-  private removeFileNameSeparator(fileName: string): string {
-    return fileName.replace(new RegExp(FILE_SEPARATOR, "g"), "_");
-  }
+  //   public getOutputSegmentPathPrefix(transcodeMedia: TranscodeMediaRequest): string {
+  //     const outputPath = this.getOutputPath(transcodeMedia);
+  //     return `${outputPath}/${OUTPUT_SEGMENT_NAME}`;
+  //   }
 }

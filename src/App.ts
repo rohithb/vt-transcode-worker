@@ -7,7 +7,7 @@ import { ec, ic } from "./constants/logging";
 import Transcode from "./services/Transcode";
 import Amqp from "./helpers/Amqp";
 import { AMQP_INPUT_ASSET_QUEUE } from "./constants/config";
-import { RemoteFile } from "./interfaces";
+import { TranscodeWorkerInput } from "./interfaces";
 import Validator from "./utils/Validator";
 import schema from "@video-tom/schema";
 
@@ -50,7 +50,7 @@ export default class App {
       //   // TODO: handle error more gracefully
       //   throw new Error("Invalid remote file object received");
       // }
-      const remoteFile = <RemoteFile>request;
+      const remoteFile = <TranscodeWorkerInput>request;
       await this.transcodeService.transcodeInputAssetAndUploadToObjectStore(remoteFile);
     } catch (err) {
       this.logger.error(err, { code: ec.amqp_invalid_message, msg: msg.content.toString() });

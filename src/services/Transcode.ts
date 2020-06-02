@@ -1,7 +1,7 @@
 import { singleton, injectable } from "tsyringe";
 import B2FileManager from "@/helpers/B2FileManager";
 import Config from "@/helpers/Config";
-import { RemoteFile, TranscodeMediaRequest, UploadTranscodedMediaResponse } from "@/interfaces";
+import { RemoteFile, TranscodeMediaRequest, UploadTranscodedMediaResponse, TranscodeWorkerInput } from "@/interfaces";
 import { ASSETS_BASE_PATH } from "@/constants/config";
 import Logger from "@/helpers/Logger";
 import { ic } from "@/constants/logging";
@@ -37,14 +37,18 @@ export default class Transcode {
    * @param remoteFile
    */
   public async transcodeInputAssetAndUploadToObjectStore(
-    remoteFile: RemoteFile
+    request: TranscodeWorkerInput
   ): Promise<UploadTranscodedMediaResponse> {
-    const requestId = remoteFile.requestId;
+    const requestId = request.requestId;
     this.logger.info(ic.request_received_start_processing, { code: ic.request_received_start_processing, requestId });
-    const inputAssetPath = await this.b2FileManager.download(remoteFile, this.config.get(ASSETS_BASE_PATH));
+    const inputAssetPath = await this.b2FileManager.download(
+      request.inputRemoteFile,
+      this.config.get(ASSETS_BASE_PATH)
+    );
     const trancodeMediaRequest: TranscodeMediaRequest = {
       requestId,
       inputAssetPath,
+      transcodeConfig: request.transcodeConfig,
     };
     const transcodedMedia = await this.transcoder.transcodeMedia(trancodeMediaRequest);
     const remoteTranscodedAssets = await this.b2FileManager.uploadTranscodedMedia(transcodedMedia);

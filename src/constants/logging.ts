@@ -26,6 +26,8 @@ export const ec = {
   failed_to_upload_trancoded_assets: "failed_to_upload_trancoded_assets",
   failed_to_trancode_input_asset: "failed_to_trancode_input_asset",
   schema_validation_failed: "schema_validation_failed",
+  ffmpeg_error: "ffmpeg_error",
+  transcoder_no_rendition_present: "transcoder_no_rendition_present",
 };
 // Warning Codes
 export const wc = {};
