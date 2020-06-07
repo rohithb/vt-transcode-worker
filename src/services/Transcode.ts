@@ -41,18 +41,23 @@ export default class Transcode {
   ): Promise<UploadTranscodedMediaResponse> {
     const requestId = request.requestId;
     this.logger.info(ic.request_received_start_processing, { code: ic.request_received_start_processing, requestId });
-    const inputAssetPath = await this.b2FileManager.download(
-      request.inputRemoteFile,
-      this.config.get(ASSETS_BASE_PATH)
-    );
+
+    const inputAssetPath = await this.b2FileManager.download(request.inputFile, this.config.get(ASSETS_BASE_PATH));
+
     const trancodeMediaRequest: TranscodeMediaRequest = {
       requestId,
       inputAssetPath,
       transcodeConfig: request.transcodeConfig,
     };
     const transcodedMedia = await this.transcoder.transcodeMedia(trancodeMediaRequest);
+
     const remoteTranscodedAssets = await this.b2FileManager.uploadTranscodedMedia(transcodedMedia);
-    this.fileUtils.deleteFiles([inputAssetPath, transcodedMedia.manifest, transcodedMedia.mediaSegment], requestId);
+
+    this.fileUtils.deleteFilesAndFolders(
+      [inputAssetPath, this.fileUtils.getOutputPath(trancodeMediaRequest)],
+      requestId
+    );
+
     this.logger.info(ic.request_completed_processing, { code: ic.request_completed_processing, requestId });
     return remoteTranscodedAssets;
   }

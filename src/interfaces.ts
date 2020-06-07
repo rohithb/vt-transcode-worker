@@ -66,7 +66,7 @@ export interface TranscodeConfig {
  */
 export interface TranscodeWorkerInput {
   requestId: string;
-  inputRemoteFile: RemoteFile;
+  inputFile: RemoteFile;
   transcodeConfig: TranscodeConfig;
 }
 
@@ -76,20 +76,32 @@ export interface TranscodeMediaRequest {
   transcodeConfig: Partial<TranscodeConfig>;
 }
 
+export interface Variant {
+  playlist: string;
+  mediaSegment: string;
+  resolution: Resolution;
+}
+
+export interface RemoteVariantFiles {
+  playlist: RemoteFile;
+  mediaSegment: RemoteFile;
+  resolution: Resolution;
+}
+
 export interface TranscodedMedia {
   requestId: string;
-  manifest: string;
-  mediaSegment: string;
+  masterPlaylist: string;
+  variants: Variant[];
 }
 
 export interface TranscoderRequest extends TranscodeMediaRequest {
-  output: TranscodedMedia;
+  outputDir: string;
 }
 
 export interface UploadTranscodedMediaResponse {
   requestId: string;
-  remoteManifest: RemoteFile;
-  remoteMediaSegment: RemoteFile;
+  masterPlaylist: RemoteFile;
+  variants: RemoteVariantFiles[];
 }
 
 export interface ObjectStoreManager {

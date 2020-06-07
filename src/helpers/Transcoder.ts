@@ -5,6 +5,7 @@ import {
   TranscodeMediaRequest,
   TranscodeConfig,
   FFmpegPreset,
+  Variant,
 } from "../interfaces";
 import { injectable, container } from "tsyringe";
 import FileUtils from "../utils/File";
@@ -31,31 +32,6 @@ export default class Transcoder {
     this.ffmpegUtils = ffmpegUtils;
   }
 
-  /**
-   * Transcodes the media file in the input location and returns the path
-   * @param input
-   */
-  private async transcode(request: TranscoderRequest): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const command = ffmpeg()
-        .input(request.inputAssetPath)
-        .addOption("-hls_time", "10")
-        .addOption("-hls_list_size", "0")
-        .addOption("-hls_playlist_type", "vod")
-        .addOption("-hls_segment_filename", request.output.mediaSegment)
-        .addOption("-hls_flags", "single_file")
-        // setup event handlers
-        .on("end", function () {
-          resolve();
-        })
-        .on("error", function (err) {
-          reject(err);
-        })
-        // save to file
-        .save(request.output.manifest);
-    });
-  }
-
   private getDefaultTranscodeConfig(): TranscodeConfig {
     return <TranscodeConfig>{
       renditions: [],
@@ -66,16 +42,16 @@ export default class Transcoder {
     };
   }
 
-  private async transcode2(
-    src: string,
-    targetDir: string,
-    transcodeConfig: Partial<TranscodeConfig> = {}
-  ): Promise<void> {
+  /**
+   * Transcode the input asset based on the transcode configuration provided
+   * @param req TranscodeRequest
+   */
+  private async transcode(req: TranscoderRequest): Promise<TranscodedMedia> {
     const defaultSettings = this.getDefaultTranscodeConfig();
     // Merge settings with default settings.
     const config = <TranscodeConfig>{
       ...defaultSettings,
-      ...transcodeConfig,
+      ...req.transcodeConfig,
     };
 
     if (!config.renditions || config.renditions.length === 0) {
@@ -86,16 +62,21 @@ export default class Transcoder {
 
     config.renditions = config.renditions.sort((a, b) => a.resolution.height - b.resolution.height);
 
-    const srcMetadata = await this.ffmpegUtils.getMetaData(src);
-    const videoStreamMetadata = srcMetadata.streams.find((s) => s.codec_type === "video");
+    const frameRate = await this.ffmpegUtils.getFrameRate(req.inputAssetPath, req.requestId).catch((err) => {
+      this.logger.error(err, { code: ec.transcoder_cannot_extract_src_frame_rate, requestId: req.requestId });
+      throw err;
+    });
+    const keyFramesInterval = frameRate * 2; // 1 in every 2 second
 
-    if (!videoStreamMetadata) {
-      throw new Error("There was a problem to extract video stream metadata");
-    }
+    let ffmpegCommand: FfmpegCommand = ffmpeg({
+      source: req.inputAssetPath,
+      logger: this.logger,
+    }).addInputOption("-hide_banner -y");
 
-    const keyFramesInterval = this.ffmpegUtils.getFrameRate(videoStreamMetadata) * 2; // 1 in every 2 second
-
-    let ffmpegCommand: FfmpegCommand = ffmpeg(src).addInputOption("-hide_banner -y");
+    const output = <TranscodedMedia>{
+      requestId: req.requestId,
+      variants: [] as Variant[],
+    };
 
     let masterPlaylistData = "#EXTM3U\n#EXT-X-VERSION:3\n";
 
@@ -107,8 +88,14 @@ export default class Transcoder {
       const playlistName = `${OUTPUT_VARIANT_PLAYLIST_PREFIX}_${rendition.resolution.height}p.m3u8`;
       const segmentName = `${OUTPUT_SEGMENT_PREFIX}_${rendition.resolution.height}p.ts`;
 
+      output.variants.push(<Variant>{
+        playlist: `${req.outputDir}/${playlistName}`,
+        mediaSegment: `${req.outputDir}/${segmentName}`,
+        resolution: rendition.resolution,
+      });
+
       ffmpegCommand = ffmpegCommand
-        .addOutput(`${targetDir}/${playlistName}`)
+        .addOutput(`${req.outputDir}/${playlistName}`)
         // @ts-ignore
         .videoCodec(config.videoCodec)
         .videoBitrate(rendition.videoBitRate)
@@ -125,16 +112,25 @@ export default class Transcoder {
           `-hls_time ${config.segmentDuration}`, // HLS options ↓
           "-hls_playlist_type vod",
           "-hls_flags single_file",
-          `-hls_segment_filename ${targetDir}/${segmentName}`,
+          `-hls_segment_filename ${req.outputDir}/${segmentName}`,
+          /**
+           * add padding to make the video resolution an even number, since h.264 requires it
+           * https://ffmpeg.org/ffmpeg-filters.html#pad
+           * https://stackoverflow.com/a/20848224/1771949
+           */
+          `-vf pad=ceil(iw/2)*2:ceil(ih/2)*2`,
         ]);
 
       // Add rendition entry in the master playlist.
       masterPlaylistData += `#EXT-X-STREAM-INF:BANDWIDTH=${bandwidth},RESOLUTION=${rendition.resolution.width}x${rendition.resolution.height}\n${playlistName}\n`;
     });
-    await this.ffmpegUtils.runCommand(ffmpegCommand);
+    await this.ffmpegUtils.runCommand(ffmpegCommand, req.requestId);
 
     // Create master playlist file.
-    await this.fileUtils.createFile(`${targetDir}/${OUTPUT_MASTER_PLAYLIST_NAME}`, masterPlaylistData);
+    await this.fileUtils.createFile(`${req.outputDir}/${OUTPUT_MASTER_PLAYLIST_NAME}`, masterPlaylistData);
+
+    output.masterPlaylist = `${req.outputDir}/${OUTPUT_MASTER_PLAYLIST_NAME}`;
+    return output;
   }
 
   /**
@@ -142,24 +138,22 @@ export default class Transcoder {
    * @param request
    */
   public async transcodeMedia(request: TranscodeMediaRequest): Promise<TranscodedMedia> {
-    const output = <TranscodedMedia>{
-      requestId: request.requestId,
-      // manifest: this.fileUtils.getOutputManifestPathPrefix(request),
-      // mediaSegment: this.fileUtils.getOutputSegmentPathPrefix(request),
+    const transcoderRequest = <TranscoderRequest>{
+      ...request,
+      outputDir: this.fileUtils.getOutputPath(request),
     };
-    const transcoderRequest = <TranscoderRequest>{ ...request, output };
     try {
-      const outputPath = this.fileUtils.getOutputPath(transcoderRequest);
-      await this.transcode2(request.inputAssetPath, outputPath, request.transcodeConfig);
-      this.logger.info(ic.transcode_completed, {
-        code: ic.transcode_completed,
+      const transcodedMedia = await this.transcode(transcoderRequest);
+
+      this.logger.info(ic.transcoder_transcode_completed, {
+        code: ic.transcoder_transcode_completed,
         requestId: transcoderRequest.requestId,
-        transcodedMedia: transcoderRequest.output,
+        transcodedMedia,
       });
-      return transcoderRequest.output;
+      return transcodedMedia;
     } catch (err) {
       this.logger.error(err, {
-        code: ec.failed_to_trancode_input_asset,
+        code: ec.transcoder_failed_to_transcode_asset,
         requestId: transcoderRequest.requestId,
         transcodeRequest: request,
       });

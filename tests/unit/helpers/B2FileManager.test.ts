@@ -61,32 +61,50 @@ describe("B2 File Manager", () => {
     expect(b2.downloadFileById).toBeCalled();
   });
 
-  test("upload file to b2", async () => {
-    const requestId = "123456789";
-    const b2FileManager = container.resolve<B2FileManager>(B2FileManager);
-    const transcodedMedia = <TranscodedMedia>{
-      manifest: getAssetPath("sample_playlist.m3u8"),
-      mediaSegment: getAssetPath("sample1.mp4"),
-      requestId,
+  /**
+   * get sample transcodedMedia object for testing
+   */
+  function getTrancodedMediaObject(): TranscodedMedia {
+    return <TranscodedMedia>{
+      masterPlaylist: getAssetPath("sample_out/master.m3u8"),
+      variants: [
+        {
+          playlist: getAssetPath("sample_out/playlist_360p.m3u8"),
+          mediaSegment: getAssetPath("sample_out/asset_360p.ts"),
+          resolution: {
+            width: 480,
+            height: 360,
+          },
+        },
+        {
+          playlist: getAssetPath("sample_out/playlist_480p.m3u8"),
+          mediaSegment: getAssetPath("sample_out/asset_480p.ts"),
+          resolution: {
+            width: 720,
+            height: 480,
+          },
+        },
+      ],
+      requestId: "123456789",
     };
-    const reponse = await b2FileManager.uploadTranscodedMedia(transcodedMedia);
-    expect(reponse.requestId).toBe(requestId);
+  }
+  test("upload file to b2", async () => {
+    const b2FileManager = container.resolve<B2FileManager>(B2FileManager);
+    const transcodedMedia = getTrancodedMediaObject();
+    const requestId = transcodedMedia.requestId;
+    const response = await b2FileManager.uploadTranscodedMedia(transcodedMedia);
+    expect(response.requestId).toBe(requestId);
     const b2 = container.resolve<BackBlazeB2>(BackBlazeB2);
-    expect(b2.uploadFile).toBeCalled();
+    expect(b2.uploadFile).toBeCalledTimes(5);
   });
 
   test("upload file exception handling", async () => {
-    const requestId = "123456789";
     const b2FileManager = container.resolve<B2FileManager>(B2FileManager);
-    const transcodedMedia = <TranscodedMedia>{
-      manifest: getAssetPath("sample_playlist.m3u8"),
-      mediaSegment: getAssetPath("sample1.mp4"),
-      requestId,
-    };
+    const transcodedMedia = getTrancodedMediaObject();
     const b2 = container.resolve<BackBlazeB2>(BackBlazeB2);
     sinon.stub(b2, "uploadFile").throws("Network error");
     expect(async () => {
-      const reponses = await b2FileManager.uploadTranscodedMedia(transcodedMedia);
+      const responses = await b2FileManager.uploadTranscodedMedia(transcodedMedia);
     }).rejects.toThrow();
   });
 

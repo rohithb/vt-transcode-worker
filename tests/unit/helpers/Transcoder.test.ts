@@ -1,8 +1,8 @@
 import "reflect-metadata";
+import fs from "fs";
 import { container } from "tsyringe";
 import Transcoder from "@/helpers/Transcoder";
 import { getAssetPath, removeOutputFiles, mockLogger, getMockConfig } from "@tests/testUtils";
-import fs from "fs";
 import { TranscodeMediaRequest, TranscodeConfig } from "@/interfaces";
 import FileUtils from "@/utils/File";
 import Config from "@/helpers/Config";
@@ -19,7 +19,7 @@ describe("Transcoder", () => {
     const configMock = getMockConfig({
       paths: { assetsBasePath: assetPath, outputDirectory: outputDir },
     });
-    mockLogger();
+    // mockLogger();
     //@ts-ignore
     container.registerInstance(Config, configMock);
   });
@@ -31,10 +31,10 @@ describe("Transcoder", () => {
   });
 
   afterAll(() => {
-    // removeOutputFiles(tempFileOutputPath);
+    removeOutputFiles(tempFileOutputPath);
   });
 
-  it("should works properly", async () => {
+  test("should works properly", async () => {
     const transcoder = container.resolve<Transcoder>(Transcoder);
     const request: TranscodeMediaRequest = {
       requestId: "151a8ac8-1654-4fe8-a435-72039fe70acd",
@@ -61,10 +61,22 @@ describe("Transcoder", () => {
       },
     };
     const output = await transcoder.transcodeMedia(request);
-    // expect(fs.existsSync(output.manifest)).toBe(true);
-    // expect(fs.existsSync(output.mediaSegment)).toBe(true);
+    expect(fs.existsSync(output.masterPlaylist)).toBe(true);
+    expect(fs.existsSync(output.variants[0].playlist)).toBe(true);
+    expect(fs.existsSync(output.variants[0].mediaSegment)).toBe(true);
+    expect(fs.existsSync(output.variants[1].playlist)).toBe(true);
+    expect(fs.existsSync(output.variants[1].mediaSegment)).toBe(true);
+    //@ts-ignore
+    const sortedRenditions = request.transcodeConfig.renditions.sort(
+      (a, b) => a.resolution.height - b.resolution.height
+    );
+
+    expect(output.variants[0].resolution).toMatchObject({
+      width: sortedRenditions[0].resolution.width,
+      height: sortedRenditions[0].resolution.height,
+    });
     expect(output.requestId).toBe(request.requestId);
-  }, 20000);
+  }, 30000);
 
   it("should throw error on invalid path", async () => {
     const transcoder = container.resolve<Transcoder>(Transcoder);

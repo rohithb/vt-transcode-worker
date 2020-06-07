@@ -67,15 +67,21 @@ export default class FileManagementUtils {
   }
 
   /**
-   * Delets all files specified in the input array
+   * Delets all files and folders specified in the input array
    * @param files
    * @returns boolean true if all the files are deleted. else returns false
    */
-  public deleteFiles(files: string[], requestId: string): boolean {
+  public deleteFilesAndFolders(files: string[], requestId: string): boolean {
     let isErrorOccured = false;
     files.forEach((file) => {
       try {
-        fs.unlinkSync(file);
+        if (fs.lstatSync(file).isDirectory()) {
+          // if directory
+          this.removeDirectory(file);
+        } else {
+          // if file
+          fs.unlinkSync(file);
+        }
       } catch (err) {
         this.logger.error(err, { code: ec.file_utils_failed_to_delete_file, file, requestId });
         isErrorOccured = true;
@@ -85,6 +91,23 @@ export default class FileManagementUtils {
       this.logger.info(ic.deleted_working_files, { code: ic.deleted_working_files, requestId, files });
     }
     return !isErrorOccured;
+  }
+
+  private removeDirectory(directory: string): void {
+    const self = this;
+    if (fs.existsSync(directory)) {
+      fs.readdirSync(directory).forEach(function (file, index) {
+        var curPath = directory + "/" + file;
+        if (fs.lstatSync(curPath).isDirectory()) {
+          // recurse
+          self.removeDirectory(curPath);
+        } else {
+          // delete file
+          fs.unlinkSync(curPath);
+        }
+      });
+      fs.rmdirSync(directory);
+    }
   }
 
   /**
@@ -98,22 +121,4 @@ export default class FileManagementUtils {
     this.createDirWithReadWritePerm(outputPath);
     return outputPath;
   }
-
-  /**
-   * returns the output manigest path
-   * @param transcodeMedia
-   */
-  // public getOutputManifestPathPrefix(transcodeMedia: TranscodeMediaRequest): string {
-  //   const outputPath = this.getOutputPath(transcodeMedia);
-  //   return `${outputPath}/${OUTPUT_MANIFEST_NAME}`;
-  // }
-
-  /**
-   * returns the output media segment path path,
-   * @param transcodeMedia
-   */
-  //   public getOutputSegmentPathPrefix(transcodeMedia: TranscodeMediaRequest): string {
-  //     const outputPath = this.getOutputPath(transcodeMedia);
-  //     return `${outputPath}/${OUTPUT_SEGMENT_NAME}`;
-  //   }
 }

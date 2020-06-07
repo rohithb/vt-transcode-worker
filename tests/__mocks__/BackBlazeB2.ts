@@ -1,6 +1,7 @@
 import { Readable } from "stream";
 import { getAssetPath } from "@tests/testUtils";
 import fs from "fs";
+import { v4 as uuidv4 } from "uuid";
 
 export default class BackBlazeB2 {
   public authorize = jest.fn();
@@ -21,14 +22,14 @@ export default class BackBlazeB2 {
     };
   });
 
-  public uploadFile = jest.fn(() => {
+  public uploadFile = jest.fn((request) => {
     return {
       data: {
         contentLength: 10293,
         contentSha1: "aszxczvsdasd1231asda123",
-        contentType: "video/mp4",
-        fileId: "abcd_1234_file_12314",
-        fileName: "not_so_awesome_file.mp4",
+        contentType: request.mime || "video/mp4",
+        fileId: uuidv4(),
+        fileName: request.fileName || "awesome_file.mp4",
         uploadTimestamp: (Date.now() / 1000) | 0,
       },
     };

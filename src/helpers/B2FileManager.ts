@@ -4,6 +4,7 @@ import {
   TranscodeMediaRequest,
   UploadTranscodedMediaResponse,
   TranscodedMedia,
+  RemoteVariantFiles,
 } from "../interfaces";
 import { singleton, injectable, container } from "tsyringe";
 import path from "path";
@@ -13,6 +14,7 @@ import Logger from "./Logger";
 import { ic, ec } from "@/constants/logging";
 import Config from "./Config";
 import { B2_OUTPUT_BUCKET_ID } from "@/constants/config";
+import { PLAYLIST_MIME_TYPE, VIDEO_MIME_TYPE } from "@/constants/others";
 
 @singleton()
 @injectable()
@@ -80,27 +82,77 @@ export default class B2FileManager implements ObjectStoreManager {
    */
   async uploadTranscodedMedia(trancodedMedia: TranscodedMedia): Promise<UploadTranscodedMediaResponse> {
     const requestId = trancodedMedia.requestId;
-    try {
-      const uploadManifestPromise = this.uploadFileToB2(trancodedMedia.manifest, "application/x-mpegURL", requestId);
-      const uploadMediaSegmentPromise = this.uploadFileToB2(trancodedMedia.mediaSegment, "video/MP2T", requestId);
-      this.logger.info(ic.uploaded_transcoded_assets, {
-        code: ic.uploaded_transcoded_assets,
-        requestId,
+    const promises: any = [];
+
+    let masterPlaylist: RemoteFile;
+    const remoteVariantFiles = [] as RemoteVariantFiles[];
+
+    const uploadMasterPlaylistPromise = this.uploadFileToB2(
+      trancodedMedia.masterPlaylist,
+      PLAYLIST_MIME_TYPE,
+      requestId
+    )
+      .then((rf) => {
+        masterPlaylist = rf;
+      })
+      .catch(() => {
+        // Don't have to do anything here as the error is already logged and finally handled in Promise.allSettled
       });
-      return <UploadTranscodedMediaResponse>{
-        requestId: trancodedMedia.requestId,
-        remoteManifest: await uploadManifestPromise,
-        remoteMediaSegment: await uploadMediaSegmentPromise,
-      };
-    } catch (err) {
-      const newErr: any = new Error("Failed to upload trancoded assets");
-      this.logger.error(newErr, {
-        code: ec.failed_to_upload_trancoded_assets,
-        requestId,
-        trancodedMedia,
+
+    promises.push(uploadMasterPlaylistPromise);
+
+    trancodedMedia.variants.forEach((variant) => {
+      const playlistPromise = this.uploadFileToB2(variant.playlist, PLAYLIST_MIME_TYPE, requestId);
+      const segmentPromise = this.uploadFileToB2(variant.mediaSegment, VIDEO_MIME_TYPE, requestId);
+
+      Promise.all([playlistPromise, segmentPromise])
+        .then((results) => {
+          const remoteVariant = <RemoteVariantFiles>{
+            resolution: variant.resolution,
+            playlist: results[0],
+            mediaSegment: results[1],
+          };
+          remoteVariantFiles.push(remoteVariant);
+        })
+        .catch((err) => {
+          // Don't have to do anything here as the error is already logged and finally handled in Promise.allSettled
+        });
+
+      promises.push(playlistPromise, segmentPromise);
+    });
+
+    return new Promise((resolve, reject) => {
+      Promise.allSettled(promises).then((results) => {
+        // @ts-ignore
+        if (!this.isAnyRejectedPromise(results)) {
+          this.logger.info(ic.uploaded_transcoded_assets, {
+            code: ic.uploaded_transcoded_assets,
+            requestId,
+          });
+          resolve(<UploadTranscodedMediaResponse>{
+            requestId,
+            masterPlaylist,
+            variants: remoteVariantFiles,
+          });
+        } else {
+          const newErr: any = new Error("Failed to upload trancoded assets");
+          this.logger.error(newErr, {
+            code: ec.uploader_failed_to_upload_trancoded_assets,
+            requestId,
+            trancodedMedia,
+          });
+          reject(newErr);
+        }
       });
-      throw newErr;
-    }
+    });
+  }
+
+  /**
+   * Return true if any of the input promise is rejected
+   * @param promiseResults
+   */
+  private isAnyRejectedPromise(promiseResults: PromiseSettledResult<any>[]): boolean {
+    return promiseResults.some((result) => result.status === "rejected");
   }
 
   /**
@@ -146,7 +198,7 @@ export default class B2FileManager implements ObjectStoreManager {
       };
     } catch (err) {
       this.logger.error(err, {
-        code: ec.failed_to_upload_file_to_object_store,
+        code: ec.uploader_failed_to_upload_file,
         filePath,
         mimeType,
         requestId,

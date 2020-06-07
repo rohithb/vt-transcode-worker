@@ -35,13 +35,13 @@
     "sinon": "^9.0.1",
     "ts-jest": "^26.0.0",
     "ts-node": "^8.10.1",
-    "typescript": "^3.9.2"
+    "typescript": "^3.9.5"
   },
   "scripts": {
     "dev": "NODE_ENV=development TS_NODE_FILES=true node --inspect=5858 -r ts-node/register ./src/index.ts",
     "dev:run": "NODE_ENV=development TS_NODE_FILES=true node -r ts-node/register",
     "dev:watch": "nodemon",
-    "start": "NODE_ENV=production node dist/src/index.js",
+    "start": "NODE_ENV=production node dist/index.js",
     "build": "tsc -p tsconfig.build.json",
     "test:unit": "NODE_ENV=test jest --group=unit --coverage --verbose --detectOpenHandles",
     "test:integration": "NODE_ENV=test jest --group=integration --verbose --testTimeout=10000 --coverage"

@@ -5,7 +5,6 @@ import FileUtils from "@/utils/File";
 import fs from "fs";
 import Config from "@/helpers/Config";
 import { TranscodeMediaRequest } from "@/interfaces";
-import { FILE_SEPARATOR, OUTPUT_MANIFEST_NAME, OUTPUT_SEGMENT_NAME } from "@/constants/others";
 import { ASSETS_BASE_PATH } from "@/constants/config";
 
 /**
@@ -60,16 +59,17 @@ describe("File Utils", () => {
     const filepath = `${tempFileOutputPath}/test_file.txt`;
     fs.openSync(filepath, "w");
     expect(fs.existsSync(filepath)).toBeTruthy();
-    const res = fileUtils.deleteFiles([filepath], "abcd123");
+    const res = fileUtils.deleteFilesAndFolders([filepath, tempFileOutputPath], "abcd123");
     expect(res).toBeTruthy();
     expect(fs.existsSync(filepath)).toBeFalsy();
+    expect(fs.existsSync(tempFileOutputPath)).toBeFalsy();
   });
 
   test("delete file exception handling", () => {
     fileUtils.ensureInputAndOutputPathExists();
     const filepath = `${tempFileOutputPath}/test_file.txt`;
     expect(fs.existsSync(filepath)).toBeFalsy();
-    const res = fileUtils.deleteFiles([filepath], "abcd123");
+    const res = fileUtils.deleteFilesAndFolders([filepath], "abcd123");
     expect(res).toBeFalsy();
   });
 
@@ -78,18 +78,19 @@ describe("File Utils", () => {
       requestId: "abcd1234",
       inputAssetPath: getAssetPath("sample1.mp4"),
     };
-    const response = fileUtils.getOutputManifestPath(transcodeMedia);
-    const expectedResponse = `${tempFileOutputPath}/${transcodeMedia.requestId}${FILE_SEPARATOR}${OUTPUT_MANIFEST_NAME}`;
+    const response = fileUtils.getOutputPath(transcodeMedia);
+    const expectedResponse = `${tempFileOutputPath}/${transcodeMedia.requestId}`;
     expect(response).toBe(expectedResponse);
   });
 
-  test("get output segment path", () => {
-    const transcodeMedia = <TranscodeMediaRequest>{
-      requestId: "abcd1234",
-      inputAssetPath: getAssetPath("sample1.mp4"),
-    };
-    const response = fileUtils.getOutputSegmentPath(transcodeMedia);
-    const expectedResponse = `${tempFileOutputPath}/${transcodeMedia.requestId}${FILE_SEPARATOR}${OUTPUT_SEGMENT_NAME}`;
-    expect(response).toBe(expectedResponse);
+  test("create file file", async () => {
+    fileUtils.ensureInputAndOutputPathExists();
+    await fileUtils.createFile(`${tempFileOutputPath}/test.txt`, "this is a file");
+    expect(fs.existsSync(`${tempFileOutputPath}/test.txt`)).toBeTruthy();
+  });
+  test("create file file fails due to invalid path", async () => {
+    const output = fileUtils.createFile(`${tempFileOutputPath}/test.txt`, "this is a file");
+    expect(output).rejects.toThrowError();
+    expect(fs.existsSync(`${tempFileOutputPath}/test.txt`)).toBeFalsy();
   });
 });

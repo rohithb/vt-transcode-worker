@@ -6,10 +6,12 @@ import mockAmqplib from "mock-amqplib";
 import sinon from "sinon";
 import amqpOriginalLib from "amqplib";
 import App from "@/App";
-import { RemoteFile } from "@/interfaces";
+import { RemoteFile, UploadTranscodedMediaResponse, TranscodeWorkerInput } from "@/interfaces";
 import Transcode from "@/services/Transcode";
+import BackBlazeB2 from "backblaze-b2";
+import BackBlazeB2Mock from "@tests/__mocks__/BackBlazeB2";
 
-describe("AMQP helper", () => {
+describe("App", () => {
   const assetPath = getAssetPath("");
   const outputDir = "output";
   const tempFileOutputPath = `${assetPath}/${outputDir}`;
@@ -48,17 +50,29 @@ describe("AMQP helper", () => {
   test("start app", async () => {
     const { connection, channel } = await getMockAmqpConnectionAndChannel(queueName);
     sinon.stub(amqpOriginalLib, "connect").returns(connection);
+
     const transcodeService = container.resolve<Transcode>(Transcode);
-    const trancodeStub = sinon.stub(transcodeService, "transcodeInputAssetAndUploadToObjectStore").resolves();
+    const trancodeStub = sinon
+      .stub(transcodeService, "transcodeInputAssetAndUploadToObjectStore")
+      .resolves({} as UploadTranscodedMediaResponse);
+
     const app = container.resolve<App>(App);
     const { consumerTag } = await app.start();
+
     const remoteFile = <RemoteFile>{
       requestId: "abcd_12345",
       fileId: "12342344abcd",
       fileName: "test_file.mp4",
     };
-    await channel.sendToQueue(queueName, JSON.stringify(remoteFile));
+    const request = <TranscodeWorkerInput>{
+      requestId: "abcd_12345",
+      inputFile: remoteFile,
+      transcodeConfig: {},
+    };
+
+    await channel.sendToQueue(queueName, JSON.stringify(request));
     await channel.cancel(consumerTag);
+
     expect(trancodeStub).toBeCalled();
   });
 });

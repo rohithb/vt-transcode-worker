@@ -12,7 +12,8 @@ export const ic = {
   downloaded_input_asset: "downloaded_input_asset",
   uploaded_transcoded_assets: "uploaded_transcoded_assets",
   deleted_working_files: "deleted_working_files",
-  transcode_completed: "transcode_completed",
+  transcoder_transcode_completed: "transcoder_transcode_completed",
+  ffmpeg_info: "ffmpeg_info",
 };
 // Error codes
 export const ec = {
@@ -22,12 +23,19 @@ export const ec = {
   b2_download_asset_failed: "b2_download_asset_failed",
   config_invalid_asset_base_path: "config_invalid_asset_base_path",
   file_utils_failed_to_delete_file: "file_utils_failed_to_delete_file",
-  failed_to_upload_file_to_object_store: "failed_to_upload_file_to_object_store",
-  failed_to_upload_trancoded_assets: "failed_to_upload_trancoded_assets",
-  failed_to_trancode_input_asset: "failed_to_trancode_input_asset",
+
+  uploader_failed_to_upload_file: "uploader_failed_to_upload_file",
+  uploader_failed_to_upload_trancoded_assets: "failed_to_upload_trancoded_assets",
+
   schema_validation_failed: "schema_validation_failed",
+
   ffmpeg_error: "ffmpeg_error",
+  ffmpeg_utils_cannot_extract_video_meta_data: "ffmpeg_utils_cannot_extract_video_meta_data",
+  ffmpeg_utils_cannot_extract_frame_rate: "ffmpeg_utils_cannot_extract_frame_rate",
+
   transcoder_no_rendition_present: "transcoder_no_rendition_present",
+  transcoder_cannot_extract_src_frame_rate: "transcoder_cannot_extract_src_frame_rate",
+  transcoder_failed_to_transcode_asset: "transcoder_failed_to_transcode_asset",
 };
 // Warning Codes
 export const wc = {};

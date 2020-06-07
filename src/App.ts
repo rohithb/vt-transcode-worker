@@ -44,6 +44,7 @@ export default class App {
   }
 
   private async consumer(msg: amqp.ConsumeMessage) {
+    const self = this;
     try {
       const request = JSON.parse(msg.content.toString());
       // if (this.validator.validateSchema(schema.remoteFile, request) === false) {
@@ -51,9 +52,9 @@ export default class App {
       //   throw new Error("Invalid remote file object received");
       // }
       const remoteFile = <TranscodeWorkerInput>request;
-      await this.transcodeService.transcodeInputAssetAndUploadToObjectStore(remoteFile);
+      await self.transcodeService.transcodeInputAssetAndUploadToObjectStore(remoteFile);
     } catch (err) {
-      this.logger.error(err, { code: ec.amqp_invalid_message, msg: msg.content.toString() });
+      self.logger.error(err, { code: ec.amqp_invalid_message, msg: msg.content.toString() });
     }
   }
 }

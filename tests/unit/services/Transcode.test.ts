@@ -74,12 +74,23 @@ describe("Transcode service", () => {
     };
     const response = await transcodeService.transcodeInputAssetAndUploadToObjectStore(<TranscodeWorkerInput>{
       requestId: "abcd_12345",
-      inputRemoteFile: remoteFile,
-      transcodeConfig: {},
+      inputFile: remoteFile,
+      transcodeConfig: {
+        renditions: [
+          {
+            resolution: {
+              width: 1280,
+              height: 720,
+            },
+            videoBitRate: 4000,
+            audioBitRate: 192,
+          },
+        ],
+      },
     });
     expect(response).toBeDefined();
     expect(response.requestId).toBe("abcd_12345");
-    expect(response.remoteManifest.fileId).toBeDefined();
-    expect(response.remoteMediaSegment.fileId).toBeDefined();
+    expect(response.masterPlaylist.fileId).toBeDefined();
+    expect(response.variants[0].playlist.fileId).toBeDefined();
   }, 20000);
 });
