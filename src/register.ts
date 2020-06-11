@@ -7,7 +7,7 @@ const config = container.resolve<Config>(Config);
 // Registering Backblaze B2 client
 container.register<BackBlazeB2>(BackBlazeB2, {
   useValue: new BackBlazeB2({
-    applicationKey: config.get(B2_KEY_ID),
-    applicationKeyId: config.get(B2_APP_KEY),
+    applicationKey: config.get(B2_APP_KEY),
+    applicationKeyId: config.get(B2_KEY_ID),
   }),
 });

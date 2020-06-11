@@ -1,4 +1,4 @@
-import { singleton, injectable } from "tsyringe";
+import { singleton, injectable, container } from "tsyringe";
 import FileUtils from "./utils/File";
 import Config from "./helpers/Config";
 import Logger from "./helpers/Logger";
@@ -44,17 +44,20 @@ export default class App {
   }
 
   private async consumer(msg: amqp.ConsumeMessage) {
-    const self = this;
     try {
+      // Reference to `this` will not work here, since this function is executed by amqp lib
+      const transcodeService = container.resolve<Transcode>(Transcode);
       const request = JSON.parse(msg.content.toString());
       // if (this.validator.validateSchema(schema.remoteFile, request) === false) {
       //   // TODO: handle error more gracefully
       //   throw new Error("Invalid remote file object received");
       // }
-      const remoteFile = <TranscodeWorkerInput>request;
-      await self.transcodeService.transcodeInputAssetAndUploadToObjectStore(remoteFile);
+      const transcodeWorkerInput = <TranscodeWorkerInput>request;
+      await transcodeService.transcodeInputAssetAndUploadToObjectStore(transcodeWorkerInput);
     } catch (err) {
-      self.logger.error(err, { code: ec.amqp_invalid_message, msg: msg.content.toString() });
+      const logger = container.resolve<Logger>(Logger);
+      logger.error(err, { code: ec.amqp_invalid_message, msg: msg.content.toString() });
+      throw err;
     }
   }
 }

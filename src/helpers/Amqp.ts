@@ -4,7 +4,7 @@ import { singleton, injectable } from "tsyringe";
 import { AMQP_HOST, AMQP_PORT, AMQP_USERNAME, AMQP_PASSWORD, AMQP_INPUT_ASSET_QUEUE } from "@/constants/config";
 import Logger from "./Logger";
 import { ec, ic } from "@/constants/logging";
-import { amqpHanderFn } from "@/interfaces";
+import { amqpHanderFn, TranscodeWorkerInput } from "@/interfaces";
 
 @singleton()
 @injectable()
@@ -35,10 +35,18 @@ export default class Amqp {
       await ch.assertQueue(queueName, { durable: true });
       return ch.consume(queueName, async (msg) => {
         if (msg) {
-          self.logger.info(ic.amqp_message_received, { code: ic.amqp_message_received, msg });
-          await handlerFn(msg);
-          ch.ack(msg);
-          self.logger.info(ic.amqp_message_acked, { code: ic.amqp_message_acked, msg });
+          const jsonMessage = JSON.parse(msg.content.toString()) as TranscodeWorkerInput;
+          self.logger.info(ic.amqp_message_received, { code: ic.amqp_message_received, msg: jsonMessage });
+          try {
+            await handlerFn(msg);
+            ch.ack(msg);
+          } catch (err) {
+            //TODO: handle failure gracefully
+            // Call the failed transcoding api in the api server
+            console.error("Failed to process the request. Program terminating");
+            process.exit(1);
+          }
+          self.logger.info(ic.amqp_message_acked, { code: ic.amqp_message_acked, requestId: jsonMessage.requestId });
         }
       });
     } catch (err) {

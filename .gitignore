@@ -247,3 +247,4 @@ temp/
 # End of https://www.gitignore.io/api/node,code,linux,macos,jetbrains+all
 
 config/local.json5
+config/production.json5

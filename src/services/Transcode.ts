@@ -39,10 +39,17 @@ export default class Transcode {
   public async transcodeInputAssetAndUploadToObjectStore(
     request: TranscodeWorkerInput
   ): Promise<UploadTranscodedMediaResponse> {
+    // TODO: instead of providing the exact resolution, if nothing is given, identify max bitrate,
+    // resolution etc and transcode to standard hd480, 360 etc as required.
     const requestId = request.requestId;
+    const startTimestamp = (Date.now() / 1000) | 0;
     this.logger.info(ic.request_received_start_processing, { code: ic.request_received_start_processing, requestId });
 
-    const inputAssetPath = await this.b2FileManager.download(request.inputFile, this.config.get(ASSETS_BASE_PATH));
+    const inputAssetPath = await this.b2FileManager
+      .download(request.inputFile, this.config.get(ASSETS_BASE_PATH))
+      .catch((err) => {
+        throw err;
+      });
 
     const trancodeMediaRequest: TranscodeMediaRequest = {
       requestId,
@@ -51,14 +58,19 @@ export default class Transcode {
     };
     const transcodedMedia = await this.transcoder.transcodeMedia(trancodeMediaRequest);
 
-    const remoteTranscodedAssets = await this.b2FileManager.uploadTranscodedMedia(transcodedMedia);
+    const uploadedTranscodedMedia = await this.b2FileManager.uploadTranscodedMedia(transcodedMedia);
 
     this.fileUtils.deleteFilesAndFolders(
       [inputAssetPath, this.fileUtils.getOutputPath(trancodeMediaRequest)],
       requestId
     );
-
-    this.logger.info(ic.request_completed_processing, { code: ic.request_completed_processing, requestId });
-    return remoteTranscodedAssets;
+    const endTimestamp = (Date.now() / 1000) | 0;
+    this.logger.info(ic.request_completed_processing, {
+      code: ic.request_completed_processing,
+      requestId,
+      uploadedTranscodedMedia,
+      timeTaken: endTimestamp - startTimestamp,
+    });
+    return uploadedTranscodedMedia;
   }
 }

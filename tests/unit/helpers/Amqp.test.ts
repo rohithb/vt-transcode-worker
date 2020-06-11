@@ -6,6 +6,7 @@ import Amqp from "@/helpers/Amqp";
 import mockAmqplib from "mock-amqplib";
 import sinon from "sinon";
 import amqpOriginalLib from "amqplib";
+import waitForExpect from "wait-for-expect";
 
 /**
  * @group unit/helper/Amqp
@@ -46,8 +47,9 @@ describe("AMQP helper", () => {
 
     await channel.sendToQueue(queueName, "test-content2");
     await channel.cancel(consumerTag);
-
+    // await waitForExpect(() => {
     expect(handlerFn).toBeCalled();
+    // });
   });
 
   test("throws conenction failure error", async () => {

@@ -38,7 +38,8 @@ export default class B2FileManager implements ObjectStoreManager {
       await this.b2.authorize();
       this.logger.info(ic.b2_authorized, { code: ic.b2_authorized });
     } catch (err) {
-      this.logger.error(err, { code: ec.b2_authorization_failed });
+      const newErr: any = new Error(err.message);
+      this.logger.error(newErr, { code: ec.b2_authorization_failed });
       throw err;
     }
   }
@@ -183,7 +184,7 @@ export default class B2FileManager implements ObjectStoreManager {
       const uploadResponse = await this.b2.uploadFile({
         uploadUrl: uploadUrlResponse.data.uploadUrl,
         uploadAuthToken: uploadUrlResponse.data.authorizationToken,
-        fileName: path.basename(filePath),
+        fileName: `${requestId}/${path.basename(filePath)}`,
         mime: mimeType, // optional mime type, will default to 'b2/x-auto' if not provided
         data: buf, // this is expecting a Buffer, not an encoded string
         onUploadProgress: null,
