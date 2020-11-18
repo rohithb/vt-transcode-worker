@@ -40,7 +40,7 @@ describe("ffmpeg utils", () => {
   });
 
   test("get Meata data failure for non video files", () => {
-    const output = ffmpegUtils.getMetaData(getAssetPath("sample_playlist.m3u8"));
+    const output = ffmpegUtils.getMetaData(getAssetPath("sample_playlist.txt"));
     expect(output).rejects.toThrowError();
   });
 

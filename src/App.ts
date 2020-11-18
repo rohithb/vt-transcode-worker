@@ -9,7 +9,6 @@ import Amqp from "./helpers/Amqp";
 import { AMQP_INPUT_ASSET_QUEUE } from "./constants/config";
 import { TranscodeWorkerInput } from "./interfaces";
 import Validator from "./utils/Validator";
-import schema from "@video-tom/schema";
 
 @singleton()
 @injectable()

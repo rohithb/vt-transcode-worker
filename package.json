@@ -4,7 +4,6 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
-    "@video-tom/schema": "file:../schema",
     "ajv": "^6.12.2",
     "amqplib": "^0.5.6",
     "axios": "^0.19.2",
